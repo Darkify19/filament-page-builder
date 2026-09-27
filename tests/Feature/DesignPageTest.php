@@ -2,7 +2,6 @@
 
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Filament\PageResource;
-use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Filament\Pages\DesignPage;
 use Filament\Support\Enums\Width;
 
 beforeEach(function (): void {

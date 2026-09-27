@@ -3,8 +3,8 @@
 namespace CarlJanzell\FilamentPageBuilder\Filament\Pages;
 
 use CarlJanzell\FilamentPageBuilder\BlockRegistry;
-use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
 use CarlJanzell\FilamentPageBuilder\Editable;
+use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
 use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Support\BlockHistory;
 use CarlJanzell\FilamentPageBuilder\Support\BlockStateNormaliser;

@@ -9,7 +9,6 @@ use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\NoteBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
-use RuntimeException;
 
 beforeEach(function (): void {
     RestrictedBlock::$visible = false;

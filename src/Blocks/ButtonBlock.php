@@ -6,8 +6,8 @@ use CarlJanzell\FilamentPageBuilder\Contracts\InlineEditable;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use CarlJanzell\FilamentPageBuilder\Editable;
 use CarlJanzell\FilamentPageBuilder\Support\SafeUrl;
-use Filament\Forms\Components\TextInput;
 use Closure;
+use Filament\Forms\Components\TextInput;
 
 class ButtonBlock implements InlineEditable, PageBlock
 {
