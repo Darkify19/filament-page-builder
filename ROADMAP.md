@@ -1,11 +1,18 @@
 # Filament Page Builder — Roadmap to full page control
 
-**Status:** Stage 0, Stage B's text editing, and Stage C (nesting, style tokens,
-responsive preview) are **done and shipped**. The canvas is a nested layout
-editor: sections and columns, drag into a slot, a document outline, and a token style
-inspector, on a dedicated full-screen Design page. The suite is at 105 tests.
+**Status:** Stage 0 (Livewire tests, data-loss fixes, undo, guards) and
+Stage C **core** (flat tree, containers, token inspector, preview width
+toggle, plaintext inline edit) are shipped. Stage B is **partial** (text
+only). Stage C extras (EmbedBlock, breakpoint visibility, anchor UI,
+storage v2 wrapper, upgrade command) and Stage D / E are **not** shipped.
+The suite is at 113 tests and 0 browser tests.
 
-Next up: rich text in place, then Stage D (draft/publish).
+Next up: the reliability queue, then rich text in place, then Stage D
+(draft/publish). The planning brief is
+[docs/improvements/](docs/improvements/README.md) — honest status, UI/UX,
+editor journeys, and the Now / Next / Later backlog. Several ✅ marks in
+this file are stale; that pack is the authority until this file is
+rewritten in the same commit as the matching work.
 
 **Where we want to get to:** the editor manipulates the *page*, not a list of panels —
 click a heading and type into it, drop a text box into a column, set spacing and
