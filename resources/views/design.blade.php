@@ -12,15 +12,31 @@
 
                 <h1 class="fpb-chrome-title">{{ $this->getRecordTitle() }}</h1>
 
+                @if ($this->selectionPath !== [])
+                    <nav class="fpb-crumbs" aria-label="Selected block">
+                        @foreach ($this->selectionPath as $crumb)
+                            <button
+                                type="button"
+                                class="fpb-crumb"
+                                @if ($crumb['id'] === $this->selectedId) data-current="true" @endif
+                                wire:click="selectBlock('{{ $crumb['id'] }}')"
+                            >{{ $crumb['label'] }}</button>
+                            @unless ($loop->last)
+                                <span class="fpb-crumb-sep" aria-hidden="true">/</span>
+                            @endunless
+                        @endforeach
+                    </nav>
+                @endif
+
                 <span class="fpb-status" @class(['fpb-status-dirty' => $this->isDirty])>
-                    {{ $this->isDirty ? 'Unsaved changes' : 'All changes saved' }}
+                    {{ $this->isDirty ? 'Draft not saved' : 'Saved' }}
                 </span>
             </div>
 
             <div class="fpb-preview-toggle" role="group" aria-label="Preview width">
-                <button type="button" class="fpb-preview-btn" :data-active="preview === 'desktop'" x-on:click="preview = 'desktop'" title="Desktop">Desktop</button>
-                <button type="button" class="fpb-preview-btn" :data-active="preview === 'tablet'" x-on:click="preview = 'tablet'" title="Tablet">Tablet</button>
-                <button type="button" class="fpb-preview-btn" :data-active="preview === 'mobile'" x-on:click="preview = 'mobile'" title="Mobile">Mobile</button>
+                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'desktop'" :data-active="preview === 'desktop'" x-on:click="preview = 'desktop'">Desktop</button>
+                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'tablet'" :data-active="preview === 'tablet'" x-on:click="preview = 'tablet'">Tablet <span class="fpb-preview-px">768</span></button>
+                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'mobile'" :data-active="preview === 'mobile'" x-on:click="preview = 'mobile'">Mobile <span class="fpb-preview-px">390</span></button>
             </div>
 
             <div class="fpb-toolbar-actions">
@@ -43,14 +59,26 @@
                 />
 
                 @if ($formEditorUrl = $this->formEditorUrl())
-                    <x-filament::button
-                        tag="a"
-                        href="{{ $formEditorUrl }}"
-                        color="gray"
-                        size="sm"
-                    >
-                        Form editor
-                    </x-filament::button>
+                    @if ($this->hasNestedBlocks())
+                        <x-filament::button
+                            tag="a"
+                            href="{{ $formEditorUrl }}"
+                            color="gray"
+                            size="sm"
+                            x-on:click="if (! confirm('This page uses columns. The form view cannot show that layout correctly and may delete or duplicate content. Open anyway?')) { $event.preventDefault() }"
+                        >
+                            Form editor
+                        </x-filament::button>
+                    @else
+                        <x-filament::button
+                            tag="a"
+                            href="{{ $formEditorUrl }}"
+                            color="gray"
+                            size="sm"
+                        >
+                            Form editor
+                        </x-filament::button>
+                    @endif
                 @endif
 
                 <x-filament::button
@@ -63,54 +91,83 @@
             </div>
         </header>
 
-        {{-- Palette --}}
         <aside class="fpb-panel fpb-palette">
-            <div class="fpb-side-tabs" role="tablist">
+            <div class="fpb-side-tabs" role="tablist" aria-label="Blocks and outline">
                 <button
                     type="button"
                     role="tab"
+                    id="fpb-tab-blocks"
                     class="fpb-side-tab"
+                    aria-controls="fpb-panel-blocks"
+                    :aria-selected="sideTab === 'blocks'"
                     :data-active="sideTab === 'blocks'"
                     x-on:click="sideTab = 'blocks'"
                 >Blocks</button>
                 <button
                     type="button"
                     role="tab"
+                    id="fpb-tab-structure"
                     class="fpb-side-tab"
+                    aria-controls="fpb-panel-structure"
+                    :aria-selected="sideTab === 'structure'"
                     :data-active="sideTab === 'structure'"
                     x-on:click="sideTab = 'structure'"
                 >Structure</button>
             </div>
 
-            <div x-show="sideTab === 'blocks'">
-                <p class="fpb-panel-hint">Drag onto the page or into a column. Click to insert at the selection.</p>
+            <div id="fpb-panel-blocks" role="tabpanel" aria-labelledby="fpb-tab-blocks" x-show="sideTab === 'blocks'">
+                <p class="fpb-panel-hint" x-text="$wire.selectedId
+                    ? 'Click to add after the selection, or drag onto a column.'
+                    : 'Click to add at the end of the page, or drag onto the canvas.'">
+                    Drag onto the page or into a column. Click to insert at the selection.
+                </p>
+
+                <label class="fpb-search">
+                    <span class="sr-only">Search blocks</span>
+                    <input
+                        type="search"
+                        class="fpb-search-input"
+                        placeholder="Search blocks"
+                        x-model="paletteQuery"
+                    >
+                </label>
 
                 @foreach ($this->paletteGroups as $group)
-                    <h3 class="fpb-palette-group">{{ $group['label'] }}</h3>
-                    <ul class="fpb-palette-list">
-                        @foreach ($group['items'] as $item)
-                            <li>
-                                <button
-                                    type="button"
-                                    class="fpb-palette-item"
-                                    draggable="true"
-                                    data-type="{{ $item['type'] }}"
-                                    x-on:dragstart="startInsert($event, '{{ $item['type'] }}')"
-                                    x-on:dragend="clearDrag()"
-                                    wire:click="insertBlock('{{ $item['type'] }}')"
+                    <div class="fpb-palette-group-wrap" x-show="[...$el.querySelectorAll('[data-fpb-search]')].some((item) => matchesPalette(item.dataset.fpbSearch))">
+                        <h3 class="fpb-palette-group">{{ $group['label'] }}</h3>
+                        <ul class="fpb-palette-list">
+                            @foreach ($group['items'] as $item)
+                                <li
+                                    data-fpb-search="{{ strtolower($item['label'].' '.$item['type'].' '.($item['description'] ?? '')) }}"
+                                    x-show="matchesPalette($el.dataset.fpbSearch)"
                                 >
-                                    @if ($item['icon'])
-                                        <x-filament::icon :icon="$item['icon']" class="fpb-palette-icon" />
-                                    @endif
-                                    <span>{{ $item['label'] }}</span>
-                                </button>
-                            </li>
-                        @endforeach
-                    </ul>
+                                    <button
+                                        type="button"
+                                        class="fpb-palette-item"
+                                        draggable="true"
+                                        data-type="{{ $item['type'] }}"
+                                        x-on:dragstart="startInsert($event, '{{ $item['type'] }}')"
+                                        x-on:dragend="clearDrag()"
+                                        wire:click="insertBlock('{{ $item['type'] }}')"
+                                    >
+                                        @if ($item['icon'])
+                                            <x-filament::icon :icon="$item['icon']" class="fpb-palette-icon" />
+                                        @endif
+                                        <span class="fpb-palette-copy">
+                                            <span>{{ $item['label'] }}</span>
+                                            @if ($item['description'])
+                                                <span class="fpb-palette-desc">{{ $item['description'] }}</span>
+                                            @endif
+                                        </span>
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 @endforeach
             </div>
 
-            <div x-show="sideTab === 'structure'" x-cloak>
+            <div id="fpb-panel-structure" role="tabpanel" aria-labelledby="fpb-tab-structure" x-show="sideTab === 'structure'" x-cloak>
                 <h2 class="fpb-panel-title">Document</h2>
                 <p class="fpb-panel-hint">Click a block to select it. The outline follows the page.</p>
 
@@ -123,21 +180,37 @@
                         @endforeach
                     </ol>
                 @endif
+
+                @if ($this->ghosts !== [])
+                    <div class="fpb-ghosts">
+                        <h3 class="fpb-palette-group">Hidden ({{ count($this->ghosts) }})</h3>
+                        <p class="fpb-panel-hint">Stored on the page but not shown — an orphaned parent or a removed column.</p>
+                        <ul class="fpb-ghost-list">
+                            @foreach ($this->ghosts as $ghost)
+                                <li>
+                                    <span>{{ $ghost['label'] }}</span>
+                                    <button type="button" class="fpb-ghost-reveal" wire:click="revealGhost('{{ $ghost['id'] }}')">
+                                        {{ $ghost['reason'] === 'orphan' ? 'Move to page' : 'Move to last column' }}
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
 
             <dl class="fpb-shortcuts">
-                <dt>&#8984;Z</dt><dd>Undo</dd>
-                <dt>&#8984;&#8679;Z</dt><dd>Redo</dd>
-                <dt>&#8984;D</dt><dd>Duplicate</dd>
-                <dt>&#8984;S</dt><dd>Save</dd>
-                <dt>&#8679;&uarr; &#8679;&darr;</dt><dd>Move block</dd>
-                <dt>&uarr; &darr;</dt><dd>Select</dd>
-                <dt>&#9003;</dt><dd>Delete</dd>
-                <dt>Esc</dt><dd>Deselect</dd>
+                <dt x-text="isMac ? '⌘S' : 'Ctrl+S'">Ctrl+S</dt><dd>Save</dd>
+                <dt x-text="isMac ? '⌘Z' : 'Ctrl+Z'">Ctrl+Z</dt><dd>Undo</dd>
+                <dt x-text="isMac ? '⇧⌘Z' : 'Ctrl+Shift+Z'">Ctrl+Shift+Z</dt><dd>Redo</dd>
+                <dt x-text="isMac ? '⌘D' : 'Ctrl+D'">Ctrl+D</dt><dd>Duplicate</dd>
+                <dt>⇧↑ ⇧↓</dt><dd>Move block</dd>
+                <dt>↑ ↓</dt><dd>Select</dd>
+                <dt>⌫</dt><dd>Delete</dd>
+                <dt>Esc</dt><dd>Deselect</dt>
             </dl>
         </aside>
 
-        {{-- Canvas --}}
         <main class="fpb-canvas-wrap">
             <div class="fpb-canvas-frame">
                 <div
@@ -147,35 +220,44 @@
                     x-on:drop.prevent="onDrop($event)"
                     x-on:dragleave="onDragLeave($event)"
                 >
-                    {{-- Application supplied design tokens and block styles, so the canvas
-                         renders blocks exactly as the public site does. --}}
                     @if ($stylesView = $this->canvasStylesView())
                         @include($stylesView)
                     @endif
                     @forelse ($this->rootBlocks as $block)
                         <x-page-builder::canvas-block :block="$block" :selected-id="$this->selectedId" />
                     @empty
-                        <p class="fpb-empty">This page has no blocks yet. Drag one in from the left, or drop a section to start a layout.</p>
+                        <div class="fpb-empty">
+                            <p class="fpb-empty-title">Start a layout</p>
+                            <p class="fpb-empty-copy">Add a row of columns, or drop a block from the left.</p>
+                            <div class="fpb-empty-actions">
+                                @foreach (array_slice($this->palette, 0, 3) as $item)
+                                    <button
+                                        type="button"
+                                        class="fpb-empty-btn"
+                                        wire:click="insertBlock('{{ $item['type'] }}')"
+                                    >Add {{ $item['label'] }}</button>
+                                @endforeach
+                            </div>
+                        </div>
                     @endforelse
                 </div>
             </div>
         </main>
 
-        {{-- Inspector --}}
         <aside class="fpb-panel fpb-inspector">
             <h2 class="fpb-panel-title">
                 {{ $this->selectedId ? 'Block settings' : 'Nothing selected' }}
             </h2>
 
             @if (! $this->selectedId)
-                <p class="fpb-panel-hint">Click a block on the page to edit it. Use the Style tab for spacing, width and alignment.</p>
+                <p class="fpb-panel-hint">Click a block on the page to edit its content and look.</p>
             @else
-                <div class="fpb-inspector-tabs" role="tablist">
-                    <button type="button" class="fpb-side-tab" :data-active="inspectorTab === 'content'" x-on:click="inspectorTab = 'content'">Content</button>
-                    <button type="button" class="fpb-side-tab" :data-active="inspectorTab === 'style'" x-on:click="inspectorTab = 'style'">Style</button>
+                <div class="fpb-inspector-tabs" role="tablist" aria-label="Block inspector">
+                    <button type="button" role="tab" id="fpb-tab-content" class="fpb-side-tab" aria-controls="fpb-panel-content" :aria-selected="inspectorTab === 'content'" :data-active="inspectorTab === 'content'" x-on:click="inspectorTab = 'content'">Content</button>
+                    <button type="button" role="tab" id="fpb-tab-style" class="fpb-side-tab" aria-controls="fpb-panel-style" :aria-selected="inspectorTab === 'style'" :data-active="inspectorTab === 'style'" x-on:click="inspectorTab = 'style'">Style</button>
                 </div>
 
-                <div x-show="inspectorTab === 'content'">
+                <div id="fpb-panel-content" role="tabpanel" aria-labelledby="fpb-tab-content" x-show="inspectorTab === 'content'">
                     @if ($this->isSelectedBlockEditable())
                         {{ $this->form }}
                     @elseif (! $this->isSelectedBlockKnown())
@@ -191,24 +273,44 @@
                     @endif
                 </div>
 
-                <div x-show="inspectorTab === 'style'" x-cloak>
-                    <p class="fpb-panel-hint">Tokens from your theme, not raw CSS.</p>
+                <div id="fpb-panel-style" role="tabpanel" aria-labelledby="fpb-tab-style" x-show="inspectorTab === 'style'" x-cloak>
+                    <p class="fpb-panel-hint">Look and spacing from your organisation's brand guide. You cannot break the layout.</p>
 
                     @foreach ($this->styleTokens() as $token => $options)
-                        <label class="fpb-style-field">
-                            <span>{{ ucfirst($token) }}</span>
-                            <select wire:model.live="blockSettings.{{ $token }}">
-                                <option value="">Default</option>
+                        <fieldset class="fpb-style-field">
+                            <legend>{{ ucfirst($token) }}</legend>
+                            <div class="fpb-token-picks" role="radiogroup" aria-label="{{ ucfirst($token) }}">
+                                <button
+                                    type="button"
+                                    class="fpb-token-pick"
+                                    @if (($this->blockSettings[$token] ?? '') === '') data-active="true" @endif
+                                    wire:click="$set('blockSettings.{{ $token }}', '')"
+                                >Default</button>
                                 @foreach ($options as $value => $label)
-                                    @if (is_int($value))
-                                        <option value="{{ $label }}">{{ $label }}</option>
-                                    @else
-                                        <option value="{{ $value }}">{{ $label }}</option>
-                                    @endif
+                                    @php
+                                        $stored = is_int($value) ? $label : $value;
+                                    @endphp
+                                    <button
+                                        type="button"
+                                        class="fpb-token-pick"
+                                        @if (($this->blockSettings[$token] ?? '') === $stored) data-active="true" @endif
+                                        wire:click="$set('blockSettings.{{ $token }}', '{{ $stored }}')"
+                                    >{{ $label }}</button>
                                 @endforeach
-                            </select>
-                        </label>
+                            </div>
+                        </fieldset>
                     @endforeach
+
+                    <label class="fpb-style-field">
+                        <span>Anchor</span>
+                        <input
+                            type="text"
+                            class="fpb-search-input"
+                            wire:model.blur="blockAnchor"
+                            placeholder="intro"
+                            autocomplete="off"
+                        >
+                    </label>
                 </div>
             @endif
         </aside>

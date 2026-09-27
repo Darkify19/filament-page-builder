@@ -2,8 +2,11 @@
 
 @php
     use CarlJanzell\FilamentPageBuilder\PageBuilder;
+    use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 
     $settings = is_array($block['settings'] ?? null) ? $block['settings'] : [];
+    $anchor = BlockTree::isValidAnchor($block['anchor'] ?? null) ? $block['anchor'] : null;
+    $label = $block['label'] ?? $block['type'];
 @endphp
 
 <div
@@ -12,6 +15,7 @@
     data-parent="{{ $block['parent'] ?? '' }}"
     data-slot="{{ $block['slot'] ?? '' }}"
     data-has-content="{{ $block['hasContent'] ? 'true' : 'false' }}"
+    @if ($anchor) id="{{ $anchor }}" @endif
     @if ($block['isContainer'] ?? false) data-container="true" @endif
     @if ($selectedId === $block['id']) data-selected="true" @endif
     @unless ($block['isKnown']) data-unknown="true" @endunless
@@ -28,17 +32,18 @@
             type="button"
             class="fpb-block-handle"
             title="Drag to move"
+            aria-label="Move {{ $label }}"
             draggable="true"
             x-on:dragstart.stop="startMove($event, '{{ $block['id'] }}')"
             x-on:dragend="clearDrag()"
             x-on:click.stop
-        >⋮⋮</button>
-        <span class="fpb-block-label">{{ $block['label'] }}</span>
+        >&#8942;&#8942;</button>
+        <span class="fpb-block-label">{{ $label }}</span>
         <span class="fpb-block-tools">
-            <button type="button" title="Duplicate"
-                    wire:click.stop="duplicateBlock('{{ $block['id'] }}')">⧉</button>
-            <button type="button" title="Delete"
-                    x-on:click.stop="remove('{{ $block['id'] }}', {{ $block['hasContent'] ? 'true' : 'false' }})">✕</button>
+            <button type="button" title="Duplicate" aria-label="Duplicate {{ $label }}"
+                    wire:click.stop="duplicateBlock('{{ $block['id'] }}')">&#10697;</button>
+            <button type="button" title="Delete" aria-label="Delete {{ $label }}"
+                    x-on:click.stop="remove('{{ $block['id'] }}', {{ $block['hasContent'] ? 'true' : 'false' }})">&#10005;</button>
         </span>
     </div>
 
@@ -58,12 +63,16 @@
                     });
                 }
             @endphp
-            @if (str_contains((string) $block['view'], '::'))
-                @include($block['view'], ['data' => $block['data']])
-            @else
-                <x-dynamic-component :component="$block['view']" :data="$block['data']" />
-            @endif
-            @php(PageBuilder::idle())
+            {!! PageBuilder::renderSafely(function () use ($block): string {
+                if (str_contains((string) $block['view'], '::')) {
+                    return view($block['view'], ['data' => $block['data']])->render();
+                }
+
+                return view('page-builder::components.dynamic-block', [
+                    'view' => $block['view'],
+                    'data' => $block['data'],
+                ])->render();
+            }) !!}
         @elseif (! $block['isKnown'])
             <p class="fpb-block-retired">
                 This page holds a <code>{{ $block['type'] }}</code> block, which this

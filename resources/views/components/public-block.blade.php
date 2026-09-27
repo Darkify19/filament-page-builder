@@ -14,11 +14,13 @@
         $registry->fileFields($block['type'] ?? null),
     );
     $slotNames = $registry->slots($block['type'] ?? null, $block['data'] ?? []);
+    $anchor = BlockTree::isValidAnchor($block['anchor'] ?? null) ? $block['anchor'] : null;
 @endphp
 
 @if ($definition)
     <div
         class="fpb-el"
+        @if ($anchor) id="{{ $anchor }}" @endif
         @foreach ($settings as $token => $value)
             @if (is_string($token) && preg_match('/^[a-z-]+$/', $token) && is_string($value))
                 data-fpb-{{ $token }}="{{ $value }}"
@@ -26,9 +28,6 @@
         @endforeach
     >
         @php
-            // Every block pushes a context, because every block pops one below. Pushing
-            // only for containers let a leaf child's idle() pop its parent's snapshot,
-            // which wiped the slot renderer and rendered every later column empty.
             PageBuilder::rendering($block['type'], $data);
 
             if ($slotNames !== []) {
@@ -46,11 +45,15 @@
                 });
             }
         @endphp
-        @if (str_contains($definition::view(), '::'))
-            @include($definition::view(), ['data' => $data])
-        @else
-            <x-dynamic-component :component="$definition::view()" :data="$data" />
-        @endif
-        @php(PageBuilder::idle())
+        {!! PageBuilder::renderSafely(function () use ($definition, $data): string {
+            if (str_contains($definition::view(), '::')) {
+                return view($definition::view(), ['data' => $data])->render();
+            }
+
+            return view('page-builder::components.dynamic-block', [
+                'view' => $definition::view(),
+                'data' => $data,
+            ])->render();
+        }) !!}
     </div>
 @endif

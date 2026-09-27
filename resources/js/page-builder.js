@@ -120,6 +120,8 @@ document.addEventListener('alpine:init', () => {
         sideTab: 'blocks',
         inspectorTab: 'content',
         preview: 'desktop',
+        paletteQuery: '',
+        isMac: typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform),
 
         /* ── Motion bookkeeping (not reactive state the template reads) ─── */
 
@@ -459,8 +461,29 @@ document.addEventListener('alpine:init', () => {
                 el instanceof HTMLElement &&
                 (el.isContentEditable ||
                     ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) ||
-                    el.closest('[contenteditable="true"]') !== null)
+                    el.closest('[contenteditable]') !== null)
             );
+        },
+
+        /**
+         * Commit the field under the caret before a save or navigation.
+         *
+         * Commit is blur-driven. ⌘S used to fire while the caret was still in the
+         * field, so the shortcut saved the previous value and then the later blur
+         * made the page dirty again.
+         */
+        flushActiveEditable() {
+            const active = document.activeElement;
+
+            if (active instanceof HTMLElement && this.$root.contains(active) && this.editableFrom({ target: active })) {
+                active.blur();
+            }
+        },
+
+        matchesPalette(haystack) {
+            const query = this.paletteQuery.trim().toLowerCase();
+
+            return query === '' || String(haystack).toLowerCase().includes(query);
         },
 
         onKeydown(event) {
@@ -468,18 +491,19 @@ document.addEventListener('alpine:init', () => {
 
             if (chord && event.key.toLowerCase() === 's') {
                 event.preventDefault();
+                this.flushActiveEditable();
 
                 return this.$wire.save();
+            }
+
+            if (this.isTyping(event)) {
+                return;
             }
 
             if (chord && event.key.toLowerCase() === 'z') {
                 event.preventDefault();
 
                 return event.shiftKey ? this.$wire.redo() : this.$wire.undo();
-            }
-
-            if (this.isTyping(event)) {
-                return;
             }
 
             const selected = this.$wire.selectedId;

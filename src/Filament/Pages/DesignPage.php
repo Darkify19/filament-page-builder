@@ -4,6 +4,7 @@ namespace CarlJanzell\FilamentPageBuilder\Filament\Pages;
 
 use CarlJanzell\FilamentPageBuilder\BlockRegistry;
 use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
+use CarlJanzell\FilamentPageBuilder\Editable;
 use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Support\BlockHistory;
 use CarlJanzell\FilamentPageBuilder\Support\BlockStateNormaliser;
@@ -60,15 +61,53 @@ abstract class DesignPage extends Page
 
     public bool $isDirty = false;
 
+    /**
+     * The last persisted tree, used so undo back to it clears the dirty flag.
+     *
+     * Public so Livewire dehydrates it: a protected snapshot would reset on every
+     * request and undo-to-saved would still look dirty.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $savedBlocks = [];
+
+    /**
+     * `updated_at` of the record when the canvas opened or last saved, for the lock.
+     */
+    public ?string $loadedUpdatedAt = null;
+
+    /**
+     * Anchor id for the selected block (passthrough key, not a style token).
+     */
+    public string $blockAnchor = '';
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
 
         $this->authorizeAccess();
 
-        $this->blocks = $this->prepareBlocks($this->record->{$this->blocksAttribute()} ?? []);
+        $raw = $this->record->{$this->blocksAttribute()} ?? [];
+        $hadDuplicateIds = $this->rawHasDuplicateIds($raw);
+
+        $this->blocks = $this->prepareBlocks($raw);
+        $this->loadedUpdatedAt = optional($this->record->updated_at)->toJSON();
 
         $this->history()->clear();
+
+        if ($hadDuplicateIds) {
+            $this->isDirty = true;
+            $this->savedBlocks = [];
+
+            Notification::make()
+                ->title('Repaired duplicate block ids. Save to keep both copies.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $this->markSaved();
     }
 
     public function getTitle(): string
@@ -276,7 +315,7 @@ abstract class DesignPage extends Page
     /**
      * Palette items grouped by category: Layout, Content, Design, then the rest.
      *
-     * @return array<string, array{label: string, items: array<int, array{type: string, label: string, icon: ?string, category: string}>}>
+     * @return array<string, array{label: string, items: array<int, array{type: string, label: string, icon: ?string, category: string, description: ?string}>}>
      */
     public function getPaletteGroupsProperty(): array
     {
@@ -429,7 +468,7 @@ abstract class DesignPage extends Page
     }
 
     /**
-     * @return array<int, array{type: string, label: string, icon: ?string}>
+     * @return array<int, array{type: string, label: string, icon: ?string, category: string, description: ?string}>
      */
     public function getPaletteProperty(): array
     {
@@ -439,9 +478,73 @@ abstract class DesignPage extends Page
                 'label' => $block::label(),
                 'icon' => $block::icon(),
                 'category' => $this->registry()->category($block::type()),
+                'description' => $this->registry()->description($block::type()),
             ],
             $this->registry()->visible(),
         ));
+    }
+
+    /**
+     * @return array<int, array{id: string, label: string}>
+     */
+    public function getSelectionPathProperty(): array
+    {
+        if ($this->selectedId === null) {
+            return [];
+        }
+
+        $path = [];
+        $id = $this->selectedId;
+        $guard = 0;
+
+        while ($id !== null && $guard++ < 20) {
+            $block = BlockTree::find($this->blocks, $id);
+
+            if ($block === null) {
+                break;
+            }
+
+            $definition = $this->registry()->find($block['type']);
+            $path[] = [
+                'id' => $id,
+                'label' => $definition === null ? $block['type'] : $definition::label(),
+            ];
+            $id = $block['parent'] ?? null;
+        }
+
+        return array_reverse($path);
+    }
+
+    /**
+     * @return array<int, array{id: string, reason: string, parent: ?string, slot: ?string, label: string}>
+     */
+    public function getGhostsProperty(): array
+    {
+        $ghosts = BlockTree::ghosts(
+            $this->blocks,
+            fn (string $type, array $data): array => $this->registry()->slots($type, $data),
+        );
+
+        return array_map(function (array $ghost): array {
+            $block = BlockTree::find($this->blocks, $ghost['id']);
+            $definition = $block === null ? null : $this->registry()->find($block['type']);
+
+            return [
+                ...$ghost,
+                'label' => $definition === null ? ($block['type'] ?? $ghost['id']) : $definition::label(),
+            ];
+        }, $ghosts);
+    }
+
+    public function hasNestedBlocks(): bool
+    {
+        foreach ($this->blocks as $block) {
+            if (($block['parent'] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /* ── Mutations ─────────────────────────────────────── */
@@ -451,6 +554,10 @@ abstract class DesignPage extends Page
         $parent = $this->nullableString($parent);
         $slot = $this->nullableString($slot);
 
+        if (! $this->canPlace($parent, $slot)) {
+            return;
+        }
+
         $next = BlockTree::move($this->blocks, $id, $to, $parent, $slot);
 
         if ($next === $this->blocks) {
@@ -459,7 +566,7 @@ abstract class DesignPage extends Page
 
         $this->remember();
         $this->blocks = $next;
-        $this->isDirty = true;
+        $this->syncDirty();
     }
 
     public function insertBlock(string $type, ?int $at = null, ?string $parent = null, ?string $slot = null): void
@@ -492,6 +599,10 @@ abstract class DesignPage extends Page
             }
         }
 
+        if (! $this->canPlace($parent, $slot)) {
+            return;
+        }
+
         $block = [
             'id' => (string) Str::uuid(),
             'type' => $type,
@@ -507,7 +618,7 @@ abstract class DesignPage extends Page
 
         $this->remember();
         $this->blocks = $next;
-        $this->isDirty = true;
+        $this->syncDirty();
 
         $this->selectBlock($block['id']);
     }
@@ -520,6 +631,14 @@ abstract class DesignPage extends Page
             return;
         }
 
+        foreach (BlockTree::descendantIds($this->blocks, $id) as $descendantId) {
+            $descendant = BlockTree::find($this->blocks, $descendantId);
+
+            if ($descendant !== null && ! $this->registry()->isVisible($descendant['type'])) {
+                return;
+            }
+        }
+
         $next = BlockTree::duplicate($this->blocks, $id);
 
         if ($next === $this->blocks) {
@@ -528,7 +647,7 @@ abstract class DesignPage extends Page
 
         $this->remember();
         $this->blocks = $next;
-        $this->isDirty = true;
+        $this->syncDirty();
     }
 
     public function removeBlock(string $id): void
@@ -547,7 +666,49 @@ abstract class DesignPage extends Page
             $this->selectBlock(null);
         }
 
-        $this->isDirty = true;
+        $this->syncDirty();
+    }
+
+    /**
+     * Move a ghost back onto a surface the outline and canvas walk.
+     *
+     * Orphans become roots. Hidden-slot children land in the parent's last
+     * visible column so they reappear without inventing a slot.
+     */
+    public function revealGhost(string $id): void
+    {
+        $ghost = collect($this->ghosts)->firstWhere('id', $id);
+
+        if ($ghost === null) {
+            return;
+        }
+
+        if ($ghost['reason'] === 'orphan' || $ghost['parent'] === null) {
+            $this->moveBlock($id, count(BlockTree::childrenOf($this->blocks, null)), null, null);
+
+            return;
+        }
+
+        $parent = BlockTree::find($this->blocks, $ghost['parent']);
+
+        if ($parent === null) {
+            $this->moveBlock($id, count(BlockTree::childrenOf($this->blocks, null)), null, null);
+
+            return;
+        }
+
+        $slots = $this->registry()->slots($parent['type'], $parent['data'] ?? []);
+
+        if ($slots === []) {
+            $this->moveBlock($id, count(BlockTree::childrenOf($this->blocks, null)), null, null);
+
+            return;
+        }
+
+        $slot = $slots[array_key_last($slots)];
+        $at = count(BlockTree::childrenOf($this->blocks, $parent['id'], $slot));
+
+        $this->moveBlock($id, $at, $parent['id'], $slot);
     }
 
     /* ── Selection and the inspector ───────────────────── */
@@ -556,6 +717,7 @@ abstract class DesignPage extends Page
     {
         $this->commitSelectedBlock();
         $this->commitSelectedSettings();
+        $this->commitSelectedAnchor();
 
         $this->selectedId = $id;
 
@@ -579,6 +741,8 @@ abstract class DesignPage extends Page
 
         $this->blockData = $index === null ? [] : ($this->blocks[$index]['data'] ?? []);
         $this->blockSettings = $index === null ? [] : ($this->blocks[$index]['settings'] ?? []);
+        $anchor = $index === null ? null : ($this->blocks[$index]['anchor'] ?? '');
+        $this->blockAnchor = is_string($anchor) ? $anchor : '';
 
         // The schema is cached per request and built from $selectedId. Selecting a
         // different block mid-request leaves that cached schema pointing at the previous
@@ -637,7 +801,7 @@ abstract class DesignPage extends Page
             $this->remember();
 
             $this->blocks[$index]['data'] = $data;
-            $this->isDirty = true;
+            $this->syncDirty();
         }
     }
 
@@ -670,6 +834,12 @@ abstract class DesignPage extends Page
             return;
         }
 
+        // In-place rich text is not mounted yet. Accepting any string here would
+        // bypass TipTap's allowlist and land raw markup in a `{!! !!}` field.
+        if ($editable->kind === Editable::RICH_TEXT) {
+            return;
+        }
+
         if (($this->blocks[$index]['data'][$field] ?? null) === $value) {
             return;
         }
@@ -677,7 +847,7 @@ abstract class DesignPage extends Page
         $this->remember();
 
         $this->blocks[$index]['data'][$field] = $value;
-        $this->isDirty = true;
+        $this->syncDirty();
 
         // The inspector is a second view of the same field and would otherwise keep
         // showing what the page said before the edit.
@@ -734,7 +904,49 @@ abstract class DesignPage extends Page
         $this->remember();
         $this->blocks[$index]['settings'] = $clean;
         $this->blockSettings = $clean;
-        $this->isDirty = true;
+        $this->syncDirty();
+    }
+
+    public function updatedBlockAnchor(): void
+    {
+        $this->commitSelectedAnchor();
+    }
+
+    public function commitSelectedAnchor(): void
+    {
+        if ($this->selectedId === null) {
+            return;
+        }
+
+        $index = $this->indexOf($this->selectedId);
+
+        if ($index === null) {
+            return;
+        }
+
+        $value = trim($this->blockAnchor);
+        $next = $value === '' ? null : $value;
+
+        if ($next !== null && ! BlockTree::isValidAnchor($next)) {
+            return;
+        }
+
+        $current = $this->blocks[$index]['anchor'] ?? null;
+        $current = is_string($current) && $current !== '' ? $current : null;
+
+        if ($current === $next) {
+            return;
+        }
+
+        $this->remember();
+
+        if ($next === null) {
+            unset($this->blocks[$index]['anchor']);
+        } else {
+            $this->blocks[$index]['anchor'] = $next;
+        }
+
+        $this->syncDirty();
     }
 
     /**
@@ -831,7 +1043,7 @@ abstract class DesignPage extends Page
         }
 
         $this->blocks = $blocks;
-        $this->isDirty = true;
+        $this->syncDirty();
 
         // The selected block may not exist in the state we travelled to.
         $this->syncInspector();
@@ -843,14 +1055,28 @@ abstract class DesignPage extends Page
     {
         $this->commitSelectedBlock();
         $this->commitSelectedSettings();
+        $this->commitSelectedAnchor();
 
         /** @var Model $record */
         $record = $this->getRecord();
 
+        $record->refresh();
+
+        if ($this->loadedUpdatedAt !== null
+            && optional($record->updated_at)->toJSON() !== $this->loadedUpdatedAt) {
+            Notification::make()
+                ->title('This page was saved elsewhere. Reload to avoid overwriting those changes.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $record->{$this->blocksAttribute()} = $this->blocks;
         $record->save();
 
-        $this->isDirty = false;
+        $this->loadedUpdatedAt = optional($record->fresh()->updated_at)->toJSON();
+        $this->markSaved();
 
         Notification::make()
             ->title('Layout saved')
@@ -866,5 +1092,66 @@ abstract class DesignPage extends Page
     protected function nullableString(?string $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * A parent of null is the page root. Anything else must be a container
+     * that currently exposes `$slot`.
+     */
+    protected function canPlace(?string $parent, ?string $slot): bool
+    {
+        if ($parent === null) {
+            return $slot === null;
+        }
+
+        $container = BlockTree::find($this->blocks, $parent);
+
+        if ($container === null || ! $this->registry()->isContainer($container['type'])) {
+            return false;
+        }
+
+        $slots = $this->registry()->slots($container['type'], $container['data'] ?? []);
+
+        return $slot !== null && in_array($slot, $slots, true);
+    }
+
+    protected function markSaved(): void
+    {
+        $this->savedBlocks = $this->blocks;
+        $this->isDirty = false;
+    }
+
+    protected function syncDirty(): void
+    {
+        $this->isDirty = $this->blocks !== $this->savedBlocks;
+    }
+
+    protected function rawHasDuplicateIds(mixed $blocks): bool
+    {
+        if (! is_array($blocks)) {
+            return false;
+        }
+
+        $seen = [];
+
+        foreach ($blocks as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            $id = $block['id'] ?? null;
+
+            if (! is_string($id) || $id === '') {
+                continue;
+            }
+
+            if (isset($seen[$id])) {
+                return true;
+            }
+
+            $seen[$id] = true;
+        }
+
+        return false;
     }
 }
