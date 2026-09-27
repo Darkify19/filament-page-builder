@@ -2,17 +2,19 @@
 
 **Status:** Stage 0 (Livewire tests, data-loss fixes, undo, guards) and
 Stage C **core** (flat tree, containers, token inspector, preview width
-toggle, plaintext inline edit) are shipped. Stage B is **partial** (text
-only). Stage C extras (EmbedBlock, breakpoint visibility, anchor UI,
-storage v2 wrapper, upgrade command) and Stage D / E are **not** shipped.
-The suite is at 113 tests and 0 browser tests.
+toggle, plaintext inline edit) are shipped. The reliability queue from
+[docs/improvements/01-reliability.md](docs/improvements/01-reliability.md)
+is in: reminted clone ids, optimistic lock, SafeUrl / MediaUrl, section
+ratio sync, ghost recovery, saved-state dirty flag, `renderSafely`, and
+the Now items Embed / anchor / palette search. Stage B is still
+**partial** (plaintext only — rich text, image picker and link popover
+are not in place). Not shipped: browser tests, draft / publish,
+per-breakpoint visibility, a `{"version":2}` storage wrapper, or
+`pages:upgrade-blocks`. The suite is Pest + Livewire only.
 
-Next up: the reliability queue, then rich text in place, then Stage D
-(draft/publish). The planning brief is
-[docs/improvements/](docs/improvements/README.md) — honest status, UI/UX,
-editor journeys, and the Now / Next / Later backlog. Several ✅ marks in
-this file are stale; that pack is the authority until this file is
-rewritten in the same commit as the matching work.
+Next up: rich text in place (Filament TipTap), then Stage D
+(draft / publish). The planning brief is
+[docs/improvements/](docs/improvements/README.md).
 
 **Where we want to get to:** the editor manipulates the *page*, not a list of panels —
 click a heading and type into it, drop a text box into a column, set spacing and
@@ -75,12 +77,12 @@ state mutations. Fix them before building on top.
 
 | # | Item | Why now |
 |---|------|---------|
-| 0.1 ✅ | **Test suite.** Pest 4 + `livewire()` tests for every `DesignPage` mutation; Pest browser tests for drag, drop and inline typing. | Stage B/C are refactors of exactly this code. Without tests they are guesswork. |
+| 0.1 🟨 | **Test suite.** Pest 4 + `livewire()` tests for every `DesignPage` mutation. **No** browser tests for drag, drop or typing yet — `scripts/check-drift.sh` is the JS contract check. | Stage B/C are refactors of exactly this code. Without tests they are guesswork. |
 | 0.2 ✅ | **Stop destroying unknown block types on save.** Keep unrecognised entries in place (render nothing, show a "retired block" placeholder on the canvas) instead of pruning at load and writing the pruned array back. | This is a silent data-loss bug today. |
-| 0.3 ✅ | **Honour `blocksAttribute()` and `recordModel()`.** Both are accepted and ignored; the canvas hardcodes `blocks`. | Documented as a limitation; it is a two-line fix and a lie in the API until then. |
+| 0.3 🟨 | **`blocksAttribute()` is honoured.** `recordModel()` is stored and unused — kept as a fluent so existing calls stay valid. | The canvas binds the resource record, not a configured model class. |
 | 0.4 ✅ | **Preserve unknown keys on a block.** Merge rather than rebuild as exactly `id/type/data`. | Stage C adds `settings`, `parent_id`, `position` — the rebuild would eat them. |
 | 0.5 ✅ | **Per-panel registry.** Registry is a container singleton; two panels merge their block sets. Key it by panel id. | |
-| 0.6 ✅ | **Undo / redo.** A capped history stack (~50) of the blocks array in the Livewire component. Block ids are already stable, which is the hard part. | Inline editing makes accidental destruction far easier. |
+| 0.6 ✅ | **Undo / redo.** A capped history stack (`BlockHistory::LIMIT = 30`) in the session, tagged by Livewire component id. Dirty clears when the tree matches the last saved snapshot. | Inline editing makes accidental destruction far easier. |
 | 0.7 ✅ | **Unsaved-changes guard.** `beforeunload` + intercept Filament's `wire:navigate`. | |
 | 0.8 ✅ | **Delete confirmation** on blocks with content. | |
 | 0.9 ✅ | **Keyboard:** ⌘Z/⇧⌘Z, ⌘D duplicate, ⌘S save, Del, ↑/↓ move selection, Esc deselect. | |
@@ -148,32 +150,22 @@ into block state.
 
 ## 4. Stage C — structure and style ("textboxes, columns, spacing") ✅ done
 
-### 4.1 Storage v2 — flat tree ✅
+### 4.1 Storage — flat tree ✅ (no version envelope)
 
-Nesting is the real cost of containers. Nested arrays make every move a path-splice and
-undo a deep diff. Go flat instead:
-
-```json
-{
-  "version": 2,
-  "blocks": [
-    {"id": "a", "type": "section", "parent": null, "slot": null, "position": 0,
-     "data": {...}, "settings": {...}},
-    {"id": "b", "type": "text",    "parent": "a", "slot": "col-1", "position": 0, ...}
-  ]
-}
-```
-
-Moves become "set parent/slot/position" — O(1), trivially undoable, and the whole tree is
-one array to diff. Ship a read-time upgrader from v1 so existing content migrates on first
-open, with a `pages:upgrade-blocks` command for bulk.
+Nesting is the real cost of containers. The column is still a **bare JSON list**. Each
+block carries `id`, `type`, `data`, `parent`, `slot`, `position`, `settings`, plus
+passthrough keys (`anchor`, application fields). There is no `{"version":2,"blocks":[…]}`
+wrapper and no `pages:upgrade-blocks` command. v1 lists (no tree keys) become roots
+inside `BlockTree::hydrate()`. Colliding ids — Filament Builder clones — are reminted
+on hydrate so the next save does not drop the copy.
 
 ### 4.2 Container blocks (shipped by the package, app-overridable) ✅
 
 - `SectionBlock` — full-bleed or contained, N columns with a ratio picker (1, 1-1, 1-2, 1-1-1, …), per-slot children.
 - `SpacerBlock`, `DividerBlock`.
-- `TextBlock` — the plain "textbox" primitive: a rich-text element with nothing else around it.
-- `ButtonBlock`, `ImageBlock`, `EmbedBlock` (video / map / iframe, allowlisted hosts).
+- `TextBlock` — a plaintext, multiline text box (`Editable::text()`, not TipTap).
+- `ButtonBlock` (SafeUrl on `href`), `ImageBlock` (public-disk URL at render),
+  `EmbedBlock` (allowlisted YouTube / Vimeo / Maps iframe).
 
 Nested drag-and-drop: drop targets become slots, with the marker resolving to the nearest
 valid slot. This is where the native HTML5 DnD API starts to hurt — see §6.
@@ -196,14 +188,16 @@ Stored in `settings`, emitted as `data-fpb-padding="lg"` on the block wrapper, s
 the app's stylesheet. An editor cannot produce a 13px lime heading, which is the point.
 `CustomHtmlBlock` remains the escape hatch for the one case a year that needs it.
 
-Also per-block: **visibility per breakpoint**, and an **anchor id** for in-page links.
+Per-block **anchor id** is a passthrough key on the block, emitted as `id` on
+`.fpb-el` / the canvas wrapper when it is a valid HTML fragment identifier.
+Per-breakpoint visibility is **not** shipped.
 
 ### 4.4 Responsive preview ✅
 
 Width toggle (desktop / tablet / mobile) on the toolbar. Because the canvas renders inline
-rather than in an iframe, this is a `max-width` on the canvas wrapper — which only tells
-the truth if block CSS uses container queries. Worth switching DAME's block CSS to
-`@container` as part of this.
+rather than in an iframe, this is a `max-width` on the canvas wrapper. `.fpb-canvas` now
+sets `container-type: inline-size` so application CSS can use `@container`. The toggle is
+a preview width, not a device emulator.
 
 ---
 
@@ -249,19 +243,19 @@ correct).
 
 ## 7. Suggested sequencing
 
-1. ~~**Stage 0** — tests, data-loss fixes, undo, guards.~~ Done.
-2. **Stage B** — ~~inline text~~ done; rich text, images and links still to come.
-3. ~~**Stage C** — storage v2, containers, style tokens, responsive preview.~~ Done.
-4. **Stage D** — draft/publish and revisions before reusable sections.
-5. **Stage E** — the `FreeCanvasBlock` hatch, if it is still wanted by then.
+1. ~~**Stage 0** — Livewire tests, data-loss fixes, undo, guards.~~ Done (browser tests still open).
+2. ~~**Reliability queue** — remint, lock, SafeUrl/MediaUrl, ghosts, dirty snapshot.~~ Done.
+3. **Stage B** — ~~inline text~~ done; rich text, image picker and link popover still to come.
+4. ~~**Stage C core** — flat tree, containers, tokens, preview width, Embed, anchor.~~ Done.
+   Breakpoint visibility and a versioned storage wrapper are still open.
+5. **Stage D** — draft/publish and revisions before reusable sections.
+6. **Stage E** — the `FreeCanvasBlock` hatch, if it is still wanted by then.
 
 ---
 
 ## 8. Repo and release
 
-- Darkify19 has **push** access to `carljanzell/filament-page-builder` (verified), so no
-  transfer or fork is needed — set the per-repo git identity and push.
-- Worth tagging `v0.1.0` at current `main` before Stage 0, so DAME can pin a version
-  instead of tracking `dev-main` while the builder is being torn up.
+- Work lands on **`dev`**. Tag releases when a consumer needs to pin or roll back;
+  a `dev-main` version string does not bust published asset caches.
 - `docs/index.html` is hand-written and already documents each limitation; keep it in the
   same commit as the fix that removes one.

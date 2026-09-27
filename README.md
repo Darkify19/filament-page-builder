@@ -6,9 +6,10 @@ content as an ordered array of typed blocks in a single JSON column.
 **📖 [Documentation](https://carljanzell.github.io/filament-page-builder/)**
 
 > **Status: the canvas is a nested layout editor.** Palette with layout
-> primitives, drag into columns, a document outline, token style inspector, inline text
-> editing, undo/redo and keyboard shortcuts — all persisting to the same JSON the form
-> editor uses. Still to come: rich text in place, draft/publish and reusable sections. See
+> primitives (including Embed), drag into columns, a document outline, token style
+> inspector, inline plaintext editing, undo/redo, ghost recovery and an optimistic
+> save lock — all persisting to the same JSON the form editor uses. Still to come:
+> rich text in place, an image picker, draft/publish and reusable sections. See
 > [ROADMAP.md](ROADMAP.md) and the [improvement pack](docs/improvements/README.md).
 
 ## Why
@@ -47,9 +48,9 @@ $panel->plugin(
             HeroBlock::class,
             RichTextBlock::class,
         ])
-        // Section, text, image, button, spacer and divider ship with the package.
+        // Section, text, image, button, embed, spacer and divider ship with the package.
         // Register a class with the same type() to replace one.
-        ->recordModel(\App\Models\Page::class)
+        ->recordModel(\App\Models\Page::class) // stored, unused by the canvas
         ->blocksAttribute('blocks'),
 );
 ```
@@ -156,7 +157,8 @@ two contexts.
 
 The declaration is the authority, not the markup: `@editable` on a field the block never
 listed emits nothing, and the canvas independently refuses to write an undeclared field, a
-value of the wrong kind, or a block the current user may not author.
+value of the wrong kind, a `richText` field (until TipTap is mounted in place), or a
+block the current user may not author.
 
 ## Defining a block
 

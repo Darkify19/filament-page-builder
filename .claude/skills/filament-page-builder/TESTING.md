@@ -1,6 +1,6 @@
 # Testing, CI and release
 
-The package has its own Testbench harness (added in `c511a63`). Before that it was tested only through its first consuming application, which was no basis for the Stage B/C refactors. The count is **113 tests / 271 assertions** at `74f19ce`. ROADMAP says 105, which is stale.
+The package has its own Testbench harness (added in `c511a63`). Before that it was tested only through its first consuming application, which was no basis for the Stage B/C refactors. The count was **113 tests / 271 assertions** at `74f19ce`. Reliability coverage lives in `tests/Feature/ReliabilityTest.php` and the unit files for `SafeUrl`, `MediaUrl`, `EmbedBlock`, `SectionBlock` and `HasBlocks`. JavaScript is still untested.
 
 Related: [CANVAS.md](CANVAS.md) (the behaviour most tests pin), [FRONTEND.md](FRONTEND.md) (everything that is *not* tested).
 
@@ -32,13 +32,11 @@ Static toggles (`PageResource::$canEdit`, `RestrictedBlock::$visible`) persist a
 
 ---
 
-## The shared-helper trap *(verified)*
+## Shared helpers
 
-`page()`, `block()`, `canvas()` and `ids()` are defined in **`tests/Feature/DesignPageTest.php`**. `HistoryTest`, `InlineEditingTest`, `NestingTest` and `StyleInspectorTest` pull them in with `require_once __DIR__.'/DesignPageTest.php'`.
+`page()`, `block()`, `canvas()` and `ids()` live in **`tests/Support/helpers.php`**, required from `tests/Pest.php`. Feature files can run alone (`vendor/bin/pest tests/Feature/NestingTest.php`) without pulling DesignPageTest into the same `beforeEach`.
 
-- The **full suite passes** only because Pest loads `DesignPageTest.php` first (alphabetically), which makes the later `require_once` calls no-ops.
-- **Running one of those files alone** (`vendor/bin/pest tests/Feature/NestingTest.php`) registers DesignPageTest's 31 tests *inside that file*, under *that file's* `beforeEach`. Right now that gives **1 failure**: `offers only the blocks the user may author in the palette` sees `section`/`text`, which NestingTest's `beforeEach` registered into the `testing` registry.
-- So run the whole suite, or use `--filter="…"`, which works fine. Don't extend the pattern: put new shared helpers in `tests/Pest.php` (or a helpers file it requires).
+Static toggles (`PageResource::$canEdit`, `RestrictedBlock::$visible`) persist across tests in the process. Each file that flips them must reset them in its own `beforeEach`.
 
 ---
 
