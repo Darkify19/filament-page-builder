@@ -4,8 +4,6 @@ use CarlJanzell\FilamentPageBuilder\Editable;
 use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
 
-require_once __DIR__.'/DesignPageTest.php';
-
 /* ── The markup ────────────────────────────────────────── */
 
 it('marks a declared field as editable on the canvas', function (): void {

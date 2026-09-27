@@ -7,8 +7,6 @@ use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
 use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 
-require_once __DIR__.'/DesignPageTest.php';
-
 beforeEach(function (): void {
     app(BlockRegistry::class)->register([
         SectionBlock::class,
