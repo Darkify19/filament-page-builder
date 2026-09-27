@@ -40,6 +40,11 @@ class ImageBlock implements InlineEditable, PageBlock
         return 'content';
     }
 
+    public static function description(): string
+    {
+        return 'A photograph with a description for screen readers.';
+    }
+
     public static function view(): string
     {
         return 'page-builder::components.image';

@@ -76,6 +76,43 @@ class SectionBlock implements Container, PageBlock
         return array_map(fn (int $i): string => 'col-'.$i, range(0, $count - 1));
     }
 
+    public static function description(): string
+    {
+        return 'A row of columns. Drop other blocks into a column.';
+    }
+
+    /**
+     * Ratios that produce one track per column.
+     *
+     * @return array<string, string>
+     */
+    public static function ratiosFor(int $columns): array
+    {
+        $columns = max(1, min(4, $columns));
+
+        return match ($columns) {
+            1 => ['1' => 'Full'],
+            2 => ['1-1' => '1 / 1', '1-2' => '1 / 2', '2-1' => '2 / 1'],
+            3 => ['1-1-1' => '1 / 1 / 1', '1-2-1' => '1 / 2 / 1'],
+            4 => ['1-1-1-1' => '1 / 1 / 1 / 1'],
+            default => ['1-1' => '1 / 1'],
+        };
+    }
+
+    /**
+     * A ratio that matches `$columns`, falling back when the stored one does not.
+     *
+     * The two fields used to be independent, so "Three" columns with a leftover
+     * `1-1` ratio drew a two-track grid and wrapped the third column onto a new row.
+     */
+    public static function ratioFor(int $columns, mixed $ratio): string
+    {
+        $options = self::ratiosFor($columns);
+        $ratio = is_string($ratio) ? $ratio : '';
+
+        return array_key_exists($ratio, $options) ? $ratio : array_key_first($options);
+    }
+
     /**
      * @return array<int, mixed>
      */
@@ -91,18 +128,13 @@ class SectionBlock implements Container, PageBlock
                     4 => 'Four',
                 ])
                 ->default(2)
-                ->live(),
+                ->live()
+                ->afterStateUpdated(function (mixed $state, callable $set): void {
+                    $set('ratio', self::ratioFor((int) $state, null));
+                }),
             Select::make('ratio')
-                ->label('Column ratio')
-                ->options([
-                    '1' => 'Full',
-                    '1-1' => '1 / 1',
-                    '1-2' => '1 / 2',
-                    '2-1' => '2 / 1',
-                    '1-1-1' => '1 / 1 / 1',
-                    '1-2-1' => '1 / 2 / 1',
-                    '1-1-1-1' => '1 / 1 / 1 / 1',
-                ])
+                ->label('Column layout')
+                ->options(fn (callable $get): array => self::ratiosFor((int) ($get('columns') ?? 2)))
                 ->default('1-1'),
         ];
     }

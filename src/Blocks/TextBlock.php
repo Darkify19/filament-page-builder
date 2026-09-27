@@ -42,6 +42,11 @@ class TextBlock implements InlineEditable, PageBlock
         return 'content';
     }
 
+    public static function description(): string
+    {
+        return 'A paragraph you can type into on the page.';
+    }
+
     public static function view(): string
     {
         return 'page-builder::components.text';

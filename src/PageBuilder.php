@@ -86,6 +86,21 @@ class PageBuilder
         static::$slotRenderer = $renderer;
     }
 
+    /**
+     * Run `$callback` and always pop the current context afterwards.
+     *
+     * An exception inside a block view used to leave `editing()` or `rendering()`
+     * stacked. Under Octane that leaked `contenteditable` onto the next public page.
+     */
+    public static function renderSafely(callable $callback): string
+    {
+        try {
+            return (string) $callback();
+        } finally {
+            static::idle();
+        }
+    }
+
     public static function idle(): void
     {
         $previous = array_pop(static::$stack);

@@ -4,6 +4,7 @@ namespace CarlJanzell\FilamentPageBuilder;
 
 use CarlJanzell\FilamentPageBuilder\Blocks\ButtonBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\DividerBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\EmbedBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\ImageBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\SectionBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\SpacerBlock;
@@ -68,10 +69,10 @@ class FilamentPageBuilderPlugin implements Plugin
     }
 
     /**
-     * The model whose records the builder edits.
+     * Optional model class name, for documentation and future artisan scaffolding.
      *
-     * The package deliberately does not ship a model or a migration — the application
-     * owns its own schema, and only has to point the builder at it.
+     * The canvas does not read this: it edits whichever record the DesignPage
+     * resource bound. Kept as a fluent so existing calls stay valid.
      *
      * @param  class-string  $model
      */
@@ -194,6 +195,7 @@ class FilamentPageBuilderPlugin implements Plugin
             TextBlock::class,
             ImageBlock::class,
             ButtonBlock::class,
+            EmbedBlock::class,
             SpacerBlock::class,
             DividerBlock::class,
         ];

@@ -165,4 +165,20 @@ class BlockRegistry
 
         return 'blocks';
     }
+
+    /**
+     * Optional one-line palette subtitle. Typos on the static are ignored.
+     */
+    public function description(?string $type): ?string
+    {
+        $block = $this->find($type);
+
+        if ($block !== null && method_exists($block, 'description')) {
+            $description = $block::description();
+
+            return is_string($description) && $description !== '' ? $description : null;
+        }
+
+        return null;
+    }
 }

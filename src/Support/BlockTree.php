@@ -33,15 +33,27 @@ class BlockTree
         }
 
         $prepared = [];
+        $seen = [];
 
         foreach (array_values($blocks) as $index => $block) {
             if (! is_array($block) || ! is_string($block['type'] ?? null)) {
                 continue;
             }
 
+            $id = $block['id'] ?? null;
+
+            // A second copy of an id is how Filament's Builder clone lands in the
+            // column. flatten() would skip it and the next canvas save would delete
+            // it. Remint so both copies survive.
+            if (! is_string($id) || $id === '' || isset($seen[$id])) {
+                $id = (string) Str::uuid();
+            }
+
+            $seen[$id] = true;
+
             $prepared[] = [
                 ...$block,
-                'id' => $block['id'] ?? (string) Str::uuid(),
+                'id' => $id,
                 'type' => $block['type'],
                 'data' => is_array($block['data'] ?? null) ? $block['data'] : [],
                 'parent' => self::nullableString($block['parent'] ?? null),
@@ -486,7 +498,72 @@ class BlockTree
         return self::flatten(self::reindex($blocks));
     }
 
-    protected static function nullableString(mixed $value): ?string
+    /**
+     * Blocks that are stored but never walked from the roots through current slots.
+     *
+     * Orphans name a parent that is not in the list. Hidden-slot children sit in a
+     * well the parent no longer exposes (a section that dropped from 3 columns to 2).
+     * Both survive every save; neither appears on the canvas, the outline or the
+     * public page until they are moved or the slot comes back.
+     *
+     * @param  array<int, array<string, mixed>>  $blocks
+     * @param  callable(string, array<string, mixed>): array<int, string>  $slotsFor
+     * @return array<int, array{id: string, reason: 'orphan'|'hidden-slot', parent: ?string, slot: ?string}>
+     */
+    public static function ghosts(array $blocks, callable $slotsFor): array
+    {
+        $ids = [];
+
+        foreach ($blocks as $block) {
+            if (is_string($block['id'] ?? null)) {
+                $ids[$block['id']] = $block;
+            }
+        }
+
+        $ghosts = [];
+
+        foreach ($blocks as $block) {
+            $id = $block['id'] ?? null;
+
+            if (! is_string($id)) {
+                continue;
+            }
+
+            $parent = self::nullableString($block['parent'] ?? null);
+            $slot = self::nullableString($block['slot'] ?? null);
+
+            if ($parent !== null && ! isset($ids[$parent])) {
+                $ghosts[] = ['id' => $id, 'reason' => 'orphan', 'parent' => $parent, 'slot' => $slot];
+
+                continue;
+            }
+
+            if ($parent === null) {
+                continue;
+            }
+
+            $exposed = $slotsFor($ids[$parent]['type'], is_array($ids[$parent]['data'] ?? null) ? $ids[$parent]['data'] : []);
+
+            if ($slot !== null && ! in_array($slot, $exposed, true)) {
+                $ghosts[] = ['id' => $id, 'reason' => 'hidden-slot', 'parent' => $parent, 'slot' => $slot];
+            }
+        }
+
+        return $ghosts;
+    }
+
+    /**
+     * Whether `$id` is a valid HTML fragment identifier.
+     *
+     * Anchors are stored as a passthrough key on the block, not a style token, so
+     * they never collide with `data-fpb-field`.
+     */
+    public static function isValidAnchor(mixed $value): bool
+    {
+        return is_string($value) && $value !== '' && (bool) preg_match('/^[A-Za-z][A-Za-z0-9_:-]*$/', $value);
+    }
+
+    public static function nullableString(mixed $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
     }
