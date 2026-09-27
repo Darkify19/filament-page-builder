@@ -9,7 +9,7 @@ content as an ordered array of typed blocks in a single JSON column.
 > primitives, drag into columns, a document outline, token style inspector, inline text
 > editing, undo/redo and keyboard shortcuts — all persisting to the same JSON the form
 > editor uses. Still to come: rich text in place, draft/publish and reusable sections. See
-> [ROADMAP.md](ROADMAP.md).
+> [ROADMAP.md](ROADMAP.md) and the [improvement pack](docs/improvements/README.md).
 
 ## Why
 
