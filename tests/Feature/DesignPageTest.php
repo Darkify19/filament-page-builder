@@ -52,6 +52,21 @@ it('opens as a full-screen editor without Filament page chrome', function (): vo
         ->assertDontSeeHtml('Design: '.$page->title.'</h1>');
 });
 
+it('ships a one-panel workspace switcher for a narrow design canvas', function (): void {
+    canvas(page())
+        ->assertSee('fpb-dock', escape: false)
+        ->assertSee('aria-label="Design workspace"', escape: false)
+        ->assertSee('aria-label="Add a block"', escape: false)
+        ->assertSee('fpb-add', escape: false)
+        ->assertSee('data-workspace', escape: false)
+        ->assertSee('tap Blocks to pick one');
+
+    canvas(page([block('a')]))
+        ->assertSeeHtml('aria-label="Edit Heading"')
+        ->assertSeeHtml('aria-label="Move Heading up"')
+        ->assertSeeHtml('aria-label="Move Heading down"');
+});
+
 it('offers only the blocks the user may author in the palette', function (): void {
     $types = array_column(canvas(page())->instance()->palette, 'type');
 
