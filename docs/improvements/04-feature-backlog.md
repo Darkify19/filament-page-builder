@@ -18,19 +18,19 @@ done.
 
 | # | Feature | Effort | Depends on | Notes |
 |---|---|---|---|---|
-| N1 | ROADMAP and docs audit | S | — | Unmark false ✅. Copy the status line from [00](00-honest-status.md) |
-| N2 | Image URL, text `pre-line`, section ratio sync | S | — | A1, A2, A3 |
-| N3 | Button URL allow-list | S | — | A4 |
-| N4 | Duplicate walks `isVisible()`; remint colliding ids | S | — | C1, B1 |
-| N5 | Flush editable before save; ignore layout undo while typing | S | — | D1, D2 |
-| N6 | Empty-state copy, palette hint, tab ARIA, labelled block tools | S | — | [02](02-ui-ux.md) P0 |
-| N7 | `recordModel()` — wire it or remove it from the public API | S | — | Dead fluent method |
-| N8 | Rich text in place (Filament TipTap via `ax-load`) + sanitise `setBlockField` | L | N5, C3, D4 | Bubble toolbar. No second HTML producer |
-| N9 | `Editable::image()` + modal `Action` on `DesignPage` | M | N2 | Reuse `BlockStateNormaliser` |
-| N10 | `EmbedBlock` (allowlisted iframe hosts) | S–M | — | Promised in ROADMAP §4.2 |
-| N11 | Anchor id on every block, emitted as `id` on `.fpb-el` | S | B5 | Avoid token name `field` |
-| N12 | Palette search + `description()` | S | — | Client-side filter |
-| N13 | One Playwright / Pest browser smoke: drop, type, save | M | — | D4. CI. Keep `check-drift.sh` |
+| N1 | ROADMAP and docs audit | S | — | **Done** — status line and stale ✅ marks rewritten |
+| N2 | Image URL, text `pre-line`, section ratio sync | S | — | **Done** (A1, A2, A3) |
+| N3 | Button URL allow-list | S | — | **Done** (A4) |
+| N4 | Duplicate walks `isVisible()`; remint colliding ids | S | — | **Done** (C1, B1) |
+| N5 | Flush editable before save; ignore layout undo while typing | S | — | **Done** (D1, D2) |
+| N6 | Empty-state copy, palette hint, tab ARIA, labelled block tools | S | — | **Done** ([02](02-ui-ux.md) P0) |
+| N7 | `recordModel()` — wire it or remove it from the public API | S | — | **Documented unused.** Kept as a fluent |
+| N8 | Rich text in place (Filament TipTap via `ax-load`) + sanitise `setBlockField` | L | N5, C3, D4 | Inline writes **refused**. TipTap not mounted |
+| N9 | `Editable::image()` + modal `Action` on `DesignPage` | M | N2 | Still open |
+| N10 | `EmbedBlock` (allowlisted iframe hosts) | S–M | — | **Done** |
+| N11 | Anchor id on every block, emitted as `id` on `.fpb-el` | S | B5 | **Done** |
+| N12 | Palette search + `description()` | S | — | **Done** |
+| N13 | One Playwright / Pest browser smoke: drop, type, save | M | — | Still open. Keep `check-drift.sh` |
 
 ---
 
@@ -40,22 +40,22 @@ Departmental CMS safety and editing depth.
 
 | # | Feature | Effort | Depends on | Notes |
 |---|---|---|---|---|
-| X1 | Optimistic lock on save | S–M | — | B7. `updated_at` or `blocks_version` |
+| X1 | Optimistic lock on save | S–M | — | **Done** — `updated_at` compare, reload on conflict |
 | X2 | Draft vs published (trait, second column, Publish action) | M | X1 | Package ships the pattern; the app migrates |
 | X3 | Signed live-preview URL helper | M | X2 | App owns the route and auth |
 | X4 | `Editable::link()` popover; app supplies a page picker | M | N3 | First consumer is `ButtonBlock` |
-| X5 | Ghost recovery panel (orphans + hidden-slot children) | M | — | B2, B4. Also the outline “Hidden (n)” group |
-| X6 | Form-editor gate for nested pages; remint on clone | M | N4 | Journey 6 |
-| X7 | Visual token pickers + breadcrumbs | M | — | Same stored strings |
+| X5 | Ghost recovery panel (orphans + hidden-slot children) | M | — | **Done** — Structure → Hidden, `revealGhost()` |
+| X6 | Form-editor gate for nested pages; remint on clone | M | N4 | **Partial** — confirm on nested pages; remint on hydrate |
+| X7 | Visual token pickers + breadcrumbs | M | — | **Done** — same stored strings |
 | X8 | Starter layout gallery (insert-a-tree mechanism) | M | N2 | App replaces presets |
 | X9 | Structure: collapse, icons, reveal, later outline DnD | M | — | |
-| X10 | Narrow-layout panel switcher | M | — | Below 1280px |
-| X11 | `container-type` on `.fpb-canvas` + docs | S | — | Honest preview |
+| X10 | Narrow-layout panel switcher | M | — | **Done** — Blocks / Page / Settings dock, floating +, selected Edit |
+| X11 | `container-type` on `.fpb-canvas` + docs | S | — | **Done** |
 | X12 | Per-breakpoint visibility in the style inspector | M | X11 | ROADMAP §4.3, never shipped |
 | X13 | Copy / paste subtree (`localStorage`) | S–M | N4, B5 | Remint ids on paste |
 | X14 | `make:filament-block` artisan command | S | N7 if wired | Class + view + registry snippet |
 | X15 | SortableJS UMD, vendored, if nested / touch DnD hurts | M | N13 | Allowed by ROADMAP §6; not required to start |
-| X16 | Saved-snapshot dirty flag; document session driver | S | — | E1, E2 |
+| X16 | Saved-snapshot dirty flag; document session driver | S | — | **Done** (E1, E2 documented)
 | X17 | Command palette `⌘K` | M | N12 | Insert, go to, save |
 
 ---

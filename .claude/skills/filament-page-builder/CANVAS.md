@@ -24,15 +24,16 @@ Computed properties (`getXProperty`): `rootBlocks` (the decorated tree, adding `
 
 | Method | Authorisation gate | Notes |
 |---|---|---|
-| `moveBlock($id, $to, $parent, $slot)` | **none, deliberately** | An editor may reorder or remove a block they can't author, and retired types can be moved. `BlockTree::move` refuses cycles and depth itself. |
-| `insertBlock($type, $at, $parent, $slot)` | `registry()->isVisible($type)` | A palette *click* with a selection inserts at the end of a container's first slot, or as the next sibling of a leaf. An explicit drop passes `$at`/`$parent`/`$slot` and wins. It seeds `data` from `defaults()` and selects the new block. |
-| `duplicateBlock($id)` | `isVisible($source type)` | Refuses retired types. **Gap:** only the *root's* type is checked, while `BlockTree::duplicate` copies every descendant. Duplicating a section can clone a child the user may not author, such as a custom-HTML block. |
+| `moveBlock($id, $to, $parent, $slot)` | **none on type, deliberately**; `canPlace($parent, $slot)` | An editor may reorder or remove a block they can't author, and retired types can be moved. `BlockTree::move` refuses cycles and depth. A parent must be a container that currently exposes `$slot` (or both null for the page root). |
+| `insertBlock($type, $at, $parent, $slot)` | `registry()->isVisible($type)` + `canPlace` | A palette *click* with a selection inserts at the end of a container's first slot, or as the next sibling of a leaf. An explicit drop passes `$at`/`$parent`/`$slot` and wins. It seeds `data` from `defaults()` and selects the new block. |
+| `duplicateBlock($id)` | `isVisible` on the source **and every descendant** | Refuses retired types and any subtree that holds a type the user may not author. |
 | `removeBlock($id)` | **none, deliberately** | Removes the subtree. It deselects if the selection was inside it, and it has no server-side confirmation (the JS confirms). |
-| `setBlockField($id, $field, $value)` | `isVisible` + declared in `editables()` + `Editable::accepts($value)` | The inline-edit path. The markup's `@editable` is **not** trusted: the block's declaration is the authority. |
+| `revealGhost($id)` | via `moveBlock` | Orphans become roots. Hidden-slot children land in the parent's last visible column. |
+| `setBlockField($id, $field, $value)` | `isVisible` + declared in `editables()` + `Editable::accepts($value)` + not `richText` | The inline-edit path. The markup's `@editable` is **not** trusted. `richText` is refused until TipTap is mounted. |
 | `commitSelectedBlock()` | skips `!isVisible` types | Otherwise the inspector renders no fields and the empty state **wipes the content**. |
 | `commitSelectedSettings()` | token allow-list | See "Style settings" below. |
 
-**The shape every mutation follows:** compute `$next` → `return` if `$next === $this->blocks` → `remember()` → assign → `isDirty = true`. Record history **only once you know something will change**. A step recorded for a no-op makes the next undo appear to do nothing (test: `does not record a commit that changes nothing`).
+**The shape every mutation follows:** compute `$next` → `return` if `$next === $this->blocks` → `remember()` → assign → `syncDirty()`. Dirty is `$blocks !== $savedBlocks`. Record history **only once you know something will change**. A step recorded for a no-op makes the next undo appear to do nothing (test: `does not record a commit that changes nothing`).
 
 **Two authorisation layers:** `Resource::canEdit($record)` (a 403 from `authorizeAccess()` at mount) decides who may open the canvas at all, and `PageBlock::isVisible()` decides who may *author* a type. Hiding a block from the palette is presentation only, since every mutation is reachable over the wire. That's why each authoring method re-checks `isVisible` rather than `has()`.
 
@@ -66,21 +67,21 @@ It lives in the **session** under `filament-page-builder.history`, not in a Live
 
 | Fact | Consequence |
 |---|---|
-| `LIMIT = 30` (ROADMAP says ~50, but the code is the authority) | The 31st-oldest step is gone |
+| `LIMIT = 30` | The 31st-oldest step is gone |
 | One stack, tagged `owner` = the Livewire component id | `mount()` calls `clear()`. Opening the canvas in a second tab wipes the first tab's history, and the first tab's next push wipes the second's |
 | A new push empties `future` | The usual redo-branch abandonment |
-| `travel()` always sets `isDirty = true` | Nothing tracks the saved state, so undoing back to it still reads "Unsaved changes" |
+| `travel()` calls `syncDirty()` | Dirty clears when `$blocks` matches the public `$savedBlocks` snapshot from the last successful save |
 | The session holds 30 × the page size | A **cookie** session driver will overflow browser cookie limits. The canvas needs a server-side driver (file, database, redis) |
 
 ---
 
 ## `save()`
 
-It commits the inspector (data, then settings), then runs `$record->{blocksAttribute()} = $this->blocks; $record->save();` and sends a success notification.
+It commits the inspector (data, settings, then anchor), refreshes the record, and **refuses** if `updated_at` no longer matches `$loadedUpdatedAt`. Otherwise it runs `$record->{blocksAttribute()} = $this->blocks; $record->save();`, refreshes the lock timestamp, calls `markSaved()`, and sends a success notification.
 
 - It writes `$blocks` **as-is**: retired types, ghosts, application keys and all the tree keys. **Never prune at persist time.** Commit `83310f3` fixed a canvas that filtered unknown types on load and destroyed them on save. Skip at *render* time only.
 - It bypasses the resource's form lifecycle: no validation and no `mutateFormDataBeforeSave`. Model observers and events **do** fire.
-- It has no optimistic lock, so the last writer wins against the form editor ([STORAGE.md](STORAGE.md)).
+- Duplicate ids in the raw column are reminted on mount; the canvas is marked dirty so the editor can persist both copies.
 
 ---
 

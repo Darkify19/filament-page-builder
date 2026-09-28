@@ -56,7 +56,7 @@ Architectural constraints that this file will not break:
 | Preview is a max-width squeeze | Width badge (“390px”); `container-type` on `.fpb-canvas`; honest label |
 | Shortcuts use ⌘ only | Platform-aware `Ctrl` / `⌘`; `?` opens a help modal |
 | Palette item is both `draggable` and `wire:click` | Drag threshold so a tiny drag does not also insert |
-| Below 1280px the grid stacks | Bottom nav: Blocks · Canvas · Settings |
+| Below 1280px the grid stacks | **Done** — Bottom nav: Blocks · Page · Settings |
 | Empty inspector mentions a Style tab that is not rendered | Drop that sentence, or always show the tabs |
 
 ### P2 — polish
@@ -114,11 +114,11 @@ Same stored strings. The application may pass a label map
 (`'lg' => 'Spacious'`) and, later, a colour for swatches. The
 package must not invent CSS.
 
-### 8. Narrow-layout chrome
+### 8. Narrow-layout chrome **done**
 
-Bottom nav switching `x-show` panels. Floating “+” to open the
-palette from the canvas tab. Selected block keeps a fixed action
-bar on touch (there is no hover).
+Bottom nav switching `x-show` panels (Blocks / Page / Settings).
+Floating “+” opens the palette from the Page tab. Selected block
+keeps Edit and ↑/↓ — native drag is off below 1280px.
 
 ### 9. Width readout
 

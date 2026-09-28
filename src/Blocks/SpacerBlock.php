@@ -27,6 +27,11 @@ class SpacerBlock implements PageBlock
         return 'design';
     }
 
+    public static function description(): string
+    {
+        return 'Vertical space between blocks.';
+    }
+
     public static function view(): string
     {
         return 'page-builder::components.spacer';

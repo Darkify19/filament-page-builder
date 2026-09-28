@@ -1,6 +1,7 @@
 <?php
 
 use CarlJanzell\FilamentPageBuilder\BlockRegistry;
+use CarlJanzell\FilamentPageBuilder\Blocks\TextBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\BannerBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\HeadingBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
@@ -45,4 +46,12 @@ it('exposes the view and file fields a block declares', function (): void {
     expect($this->registry->view('banner'))->toBe(BannerBlock::view())
         ->and($this->registry->fileFields('banner'))->toBe(['image'])
         ->and($this->registry->fileFields('heading'))->toBe([]);
+});
+
+it('reads an optional description and ignores types that omit it', function (): void {
+    $this->registry->register([TextBlock::class]);
+
+    expect($this->registry->description('text'))->toBe('A paragraph you can type into on the page.')
+        ->and($this->registry->description('heading'))->toBeNull()
+        ->and($this->registry->description('nope'))->toBeNull();
 });

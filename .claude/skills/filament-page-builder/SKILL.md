@@ -18,9 +18,9 @@ It adds a full-screen visual canvas beside Filament's `Builder` form field. Both
 | The stored JSON shape, `parent`/`slot`/`position`, `BlockTree` ops, the depth cap, orphan/hidden-slot **ghosts**, why form-editor reorders and clones misbehave, `HasBlocks` | [STORAGE.md](STORAGE.md) |
 | `DesignPage`: mutations and their auth gates, inspector commit/sync (`getState`, `cacheSchema`), style-settings allow-list, `save()`, **undo history in the session**, the full-screen page overrides, Livewire hook-name traps | [CANVAS.md](CANVAS.md) |
 | `page-builder.js` / `page-builder.css`: the `$wire` and DOM contracts, drag and drop, motion, keyboard, inline editing, `.fi-*` full-screen coupling, token CSS pairs, dark mode, **asset publishing and caching** | [FRONTEND.md](FRONTEND.md) |
-| Writing or changing a block: the `PageBlock` / `Container` / `InlineEditable` contracts, optional `defaults()`/`category()`, the per-panel registry, shipped primitives (and their bugs), `Editable` kinds, `BlockStateNormaliser` | [BLOCKS.md](BLOCKS.md) |
+| Writing or changing a block: the `PageBlock` / `Container` / `InlineEditable` contracts, optional `defaults()`/`category()`/`description()`, the per-panel registry, shipped primitives, `Editable` kinds, `BlockStateNormaliser` | [BLOCKS.md](BLOCKS.md) |
 | Canvas vs public rendering, `view()` resolution (`::` include vs component), the `PageBuilder` context stack, writing a container view with `slot()`, token emission rules, **public-site CSS**, the responsive preview | [RENDERING.md](RENDERING.md) |
-| The Testbench harness, fixtures, **the `require_once DesignPageTest.php` trap**, what's untested (all JS), CI, the dev→main auto-merge, consumers on `dev-main` | [TESTING.md](TESTING.md) |
+| The Testbench harness, fixtures, shared helpers, what's untested (all JS), CI, the dev→main auto-merge, consumers on `dev-main` | [TESTING.md](TESTING.md) |
 | **How DAME (the first consumer) integrates**: its block library, `PageBlocks` Builder bridge, canvas styles | `../DAME_UPLB/.claude/skills/dame-uplb/CMS.md`. This skill is authoritative for package behaviour, so don't duplicate DAME specifics here. |
 
 ---
@@ -29,7 +29,7 @@ It adds a full-screen visual canvas beside Filament's `Builder` form field. Both
 
 ```bash
 composer install
-vendor/bin/pest                          # full suite: 113 tests. Running one file that require_once's DesignPageTest misleads (TESTING.md)
+vendor/bin/pest                          # full suite. Helpers live in tests/Support/helpers.php
 vendor/bin/pest --filter="moves a block" # safe way to run a subset
 composer lint                            # pint --test (check only). CI fails on style
 .claude/skills/filament-page-builder/scripts/check-drift.sh   # JS↔DesignPage contract, dataset attrs, Filament .fi-* classes
@@ -54,7 +54,7 @@ src/
   Editable.php                    # inline-edit declaration: text | richText, multiline(), placeholder(), accepts()
   Contracts/                      # PageBlock · Container · InlineEditable
   Concerns/HasBlocks.php          # optional model trait: getBlocks(), $blocksAttribute override, ensureBlockIds()
-  Blocks/                         # shipped primitives: Section (Container), Text, Image, Button, Spacer, Divider
+  Blocks/                         # shipped primitives: Section (Container), Text, Image, Button, Embed, Spacer, Divider
   Support/BlockTree.php           # the flat tree: hydrate(), move/insert/remove/duplicate, MAX_DEPTH = 5
   Support/BlockHistory.php        # session undo stack, LIMIT 30, tagged by Livewire component id
   Support/BlockStateNormaliser.php # TipTap doc → HTML, upload array → path / temporary URL
@@ -94,14 +94,14 @@ ROADMAP.md                        # staged plan (Stage 0/B-text/C done; rich tex
 | Allowed style-token values | `FilamentPageBuilderPlugin::getStyleTokens()` + `DesignPage::tokenValues()` |
 | A window/document listener in the canvas JS | `bind()` (removed again in `destroy()`) |
 | Any animation | `motion.play()` / `motion.flash()` / `motion.reset()` |
-| A canvas feature test | the `page()` / `block()` / `canvas()` / `ids()` helpers (in `DesignPageTest.php`, see its trap in TESTING.md) |
+| A canvas feature test | the `page()` / `block()` / `canvas()` / `ids()` helpers (`tests/Support/helpers.php`, required from `tests/Pest.php`) |
 
 ---
 
 ## Critical Warnings
 
 1. **Never prune at persist time.** `save()` writes `$blocks` whole: retired types, ghosts, application keys. Skipping something is correct only at *render* time. Commit `83310f3` fixed a canvas that silently destroyed retired blocks on Save.
-2. **Every authoring path asks `isVisible()`, not `has()`.** The canvas is a public Livewire surface, and the palette hiding a block is only cosmetic. Move and remove are *deliberately* ungated. `duplicateBlock()` checks only the root, so it copies descendants the user may not author (CANVAS.md).
+2. **Every authoring path asks `isVisible()`, not `has()`.** The canvas is a public Livewire surface, and the palette hiding a block is only cosmetic. Move and remove are *deliberately* ungated. `duplicateBlock()` walks every descendant and refuses if any is not visible.
 3. **Every `PageBuilder::editing()` / `rendering()` needs exactly one `idle()`.** Asymmetric push/pop emptied every column after the first on the public site (`dc08dbc`).
 4. **History is recorded only after a change is confirmed**, and tree ops signal refusal by returning their input unchanged (`===`). A no-op recorded as a step makes the next undo look broken.
 5. **Commit the inspector with `getState()`, drop `cacheSchema('form', null)` before `fill()`, and never commit inside `syncInspector()`.** Each rule prevents a way of wiping or corrupting block data (CANVAS.md).
@@ -115,14 +115,12 @@ ROADMAP.md                        # staged plan (Stage 0/B-text/C done; rich tex
 |---|---|---|
 | `filament:optimize` publishes the assets | docs "Assets" | Only `filament:assets` / `filament:upgrade` do |
 | `.fpb-toolbar` is an overridable class | docs "Styling the canvas" | It doesn't exist. Use `.fpb-chrome` / `.fpb-toolbar-actions` |
-| `recordModel()` is honoured | ROADMAP 0.3, docs API table | Stored and read by nothing |
+| `recordModel()` is honoured | ROADMAP 0.3 | Stored and read by nothing (documented) |
 | Storage v2 `{"version":2,"blocks":[…]}` + `pages:upgrade-blocks` | ROADMAP §4.1 | Never shipped. The upgrade happens implicitly in `hydrate()` |
-| `EmbedBlock`, per-breakpoint visibility, anchor id | ROADMAP §4.2–4.3 (marked ✅) | None exist |
+| Per-breakpoint visibility | ROADMAP §4.3 | Not shipped. Embed and anchor **are** |
 | SortableJS vendored for nesting | ROADMAP §6 | Native DnD. Anime.js is the only vendored library |
-| Undo capped at ~50 | ROADMAP 0.6 | `BlockHistory::LIMIT = 30` |
-| Pest browser tests for drag/drop/typing | ROADMAP 0.1 (✅) | None exist |
-| "The suite is at 105 tests" | ROADMAP status | 113 |
-| Shortcuts are ignored while typing | commit `c76513c` | ⌘S / ⌘Z / ⇧⌘Z are intercepted anyway |
+| Pest browser tests for drag/drop/typing | ROADMAP 0.1 | None exist. `check-drift.sh` is the JS contract |
+| Shortcuts are ignored while typing | — | ⌘S flushes then saves. ⌘Z / ⇧⌘Z return while `isTyping()` |
 
 ---
 

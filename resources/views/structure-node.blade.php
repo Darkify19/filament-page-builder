@@ -4,6 +4,7 @@
         class="fpb-structure-btn"
         @if ($this->selectedId === $node['id']) data-selected="true" @endif
         wire:click="selectBlock('{{ $node['id'] }}')"
+        x-on:click="afterRevealOnCanvas()"
     >
         <span class="fpb-structure-label">{{ $node['label'] }}</span>
     </button>

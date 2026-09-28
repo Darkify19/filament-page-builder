@@ -189,6 +189,8 @@ html.dark .fpb {
     background: var(--fpb-canvas-bg, #fff);
     color: var(--fpb-canvas-fg, #111827);
     width: 100%;
+    container-type: inline-size;
+    container-name: fpb-canvas;
     transition: max-width 0.2s ease;
     box-shadow: 0 1px 8px rgba(15, 23, 42, 0.04);
 }
@@ -219,8 +221,13 @@ html.dark .fpb {
 }
 .fpb-block-handle:active { cursor: grabbing; }
 .fpb-block-label { text-transform: uppercase; letter-spacing: 0.04em; margin-right: auto; }
+.fpb-block-tools { display: flex; align-items: center; gap: 0.1rem; }
 .fpb-block-tools button { color: #fff; padding: 0 0.2rem; cursor: pointer; background: none; border: 0; }
 .fpb-block-tools button:hover { color: #fca5a5; }
+.fpb-block-edit {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 0 0.35rem;
+}
 
 .fpb-block-body { pointer-events: none; }
 
@@ -316,9 +323,17 @@ body.fpb-edit-mode .fpb-slot[data-drop-active="true"] {
     box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.16);
 }
 
-.fpb-empty { padding: 3rem 1rem; text-align: center; opacity: 0.6; font-size: 0.9rem; }
+.fpb-empty { padding: 3rem 1rem; text-align: center; font-size: 0.9rem; }
+.fpb-empty-title { margin: 0 0 0.35rem; font-weight: 650; }
+.fpb-empty-copy { margin: 0 0 1rem; opacity: 0.65; }
+.fpb-empty-copy-narrow { display: none; }
+.fpb-empty-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.fpb-empty-btn {
+    padding: 0.45rem 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.06); color: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+}
 
-.fpb-text { margin: 0; padding: 0.75rem 1rem; min-height: 1.4em; }
+.fpb-text { margin: 0; padding: 0.75rem 1rem; min-height: 1.4em; white-space: pre-line; }
 .fpb-button {
     display: inline-block; margin: 0.75rem 1rem; padding: 0.5rem 1rem;
     border-radius: 0.375rem; background: #2563eb; color: #fff; text-decoration: none;
@@ -336,13 +351,66 @@ body.fpb-edit-mode .fpb-slot[data-drop-active="true"] {
 .fpb-spacer[data-fpb-height="xl"] { height: 6rem; }
 .fpb-divider { margin: 1rem; border: 0; border-top: 1px solid rgba(128, 128, 128, 0.35); }
 
-.fpb-style-field { display: grid; gap: 0.25rem; margin-bottom: 0.75rem; font-size: 0.8rem; }
-.fpb-style-field select {
+.fpb-style-field { display: grid; gap: 0.25rem; margin-bottom: 0.75rem; font-size: 0.8rem; border: 0; padding: 0; min-width: 0; }
+.fpb-style-field legend,
+.fpb-style-field > span { font-weight: 600; }
+.fpb-style-field select,
+.fpb-style-field input {
     width: 100%; padding: 0.4rem 0.5rem; border-radius: 0.375rem;
     border: 1px solid rgba(128, 128, 128, 0.3); background: transparent;
     color: inherit;
 }
-html.dark .fpb-style-field select { color-scheme: dark; }
+html.dark .fpb-style-field select,
+html.dark .fpb-style-field input { color-scheme: dark; }
+
+.fpb-token-picks { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.fpb-token-pick {
+    padding: 0.28rem 0.5rem; border-radius: 0.375rem; border: 1px solid rgba(128, 128, 128, 0.28);
+    background: transparent; color: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+}
+.fpb-token-pick[data-active="true"] {
+    border-color: #2563eb; background: rgba(37, 99, 235, 0.1);
+}
+
+.fpb-crumbs {
+    display: flex; align-items: center; gap: 0.25rem; min-width: 0;
+    font-size: 0.72rem; opacity: 0.75;
+}
+.fpb-crumb {
+    border: 0; background: transparent; color: inherit; padding: 0; cursor: pointer;
+    max-width: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fpb-crumb[data-current="true"] { font-weight: 700; opacity: 1; }
+.fpb-crumb-sep { opacity: 0.5; }
+
+.fpb-search { display: block; margin-bottom: 0.75rem; }
+.fpb-search-input {
+    width: 100%; padding: 0.4rem 0.55rem; border-radius: 0.375rem;
+    border: 1px solid rgba(128, 128, 128, 0.3); background: transparent; color: inherit; font-size: 0.8rem;
+}
+.fpb-palette-copy { display: grid; gap: 0.1rem; min-width: 0; }
+.fpb-palette-desc { font-size: 0.7rem; opacity: 0.65; font-weight: 400; }
+.fpb-ghosts { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(128, 128, 128, 0.2); }
+.fpb-ghost-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; font-size: 0.8rem; }
+.fpb-ghost-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.fpb-ghost-reveal {
+    border: 0; background: transparent; color: inherit; font-size: 0.72rem; font-weight: 600;
+    text-decoration: underline; cursor: pointer; opacity: 0.75;
+}
+.fpb-preview-px { opacity: 0.55; font-weight: 500; }
+.fpb-embed { position: relative; width: 100%; padding-bottom: 56.25%; }
+.fpb-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.fpb-embed-placeholder {
+    margin: 0; padding: 2.5rem 1rem; text-align: center; font-size: 0.8rem; opacity: 0.55;
+    background: rgba(128, 128, 128, 0.08);
+}
+.fpb-sr-only,
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.fpb-structure .fpb-structure-btn { padding-left: calc(0.45rem + (var(--fpb-depth, 0) * 0.15rem)); }
 
 /* Token attributes — same names on the canvas wrapper and the public .fpb-el wrapper. */
 .fpb-block[data-fpb-padding="none"] > .fpb-block-body > *,
@@ -418,26 +486,142 @@ body.fpb-edit-mode .fi-main-ctn {
     display: flex;
 }
 
+.fpb-dock,
+.fpb-add { display: none; }
+
 @media (max-width: 1280px) {
+    /*
+     * One workspace at a time. Stacking palette + canvas + inspector made the
+     * editor a tall scroll on a phone or a split laptop. The dock keeps 100dvh
+     * and Alpine shows the active panel.
+     */
     html:has(body.fpb-edit-mode),
     body.fpb-edit-mode {
-        height: auto;
-        overflow: auto;
+        height: 100%;
+        overflow: hidden;
     }
 
     .fpb {
+        position: relative;
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto minmax(28rem, 1fr) auto;
-        height: auto;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        height: 100dvh;
         min-height: 100dvh;
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
     .fpb-chrome {
         flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.45rem 0.7rem;
     }
 
-    .fpb-palette { border-right: 0; border-bottom: 1px solid rgba(128, 128, 128, 0.22); }
-    .fpb-inspector { border-left: 0; border-top: 1px solid rgba(128, 128, 128, 0.22); }
+    .fpb-chrome-start { gap: 0.45rem; }
+    .fpb-chrome-title { font-size: 0.85rem; max-width: 40vw; }
+    .fpb-crumbs { display: none; }
+    .fpb-desktop-only { display: none !important; }
+
+    .fpb-palette,
+    .fpb-inspector,
+    .fpb-canvas-wrap {
+        grid-column: 1;
+        grid-row: 2;
+        border: 0;
+        min-height: 0;
+    }
+
+    .fpb-empty-copy-wide { display: none; }
+    .fpb-empty-copy-narrow { display: inline; }
+
+    .fpb-canvas-frame { padding: 0.75rem; }
+
+    .fpb-block[data-selected="true"] > .fpb-block-bar {
+        opacity: 1;
+        position: sticky;
+        top: 0;
+    }
+
+    .fpb-block-handle { display: none; }
+
+    .fpb-block-handle,
+    .fpb-block-tools button {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        touch-action: manipulation;
+    }
+
+    .fpb-palette-item,
+    .fpb-empty-btn,
+    .fpb-token-pick,
+    .fpb-structure-btn,
+    .fpb-dock-btn,
+    .fpb-ghost-reveal {
+        min-height: 2.75rem;
+        touch-action: manipulation;
+    }
+
+    .fpb-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        right: 1rem;
+        bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+        z-index: 4;
+        width: 3.25rem;
+        height: 3.25rem;
+        border: 0;
+        border-radius: 999px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 1.75rem;
+        font-weight: 500;
+        line-height: 1;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+        touch-action: manipulation;
+    }
+
+    .fpb-dock {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-column: 1;
+        grid-row: 3;
+        gap: 0.25rem;
+        padding: 0.35rem 0.45rem;
+        padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(128, 128, 128, 0.22);
+        background: var(--fpb-panel-bg, #fff);
+        z-index: 4;
+    }
+
+    .fpb-dock-btn {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border: 0;
+        border-radius: 0.5rem;
+        background: transparent;
+        color: inherit;
+        font-size: 0.78rem;
+        font-weight: 650;
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
+    .fpb-dock-btn[data-active="true"] {
+        background: var(--fpb-raised-bg, #fff);
+        opacity: 1;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .fpb-dock-dot {
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 999px;
+        background: #2563eb;
+    }
 }
 
 /*

@@ -1,16 +1,16 @@
 <?php
 
-namespace CarlJanzell\FilamentPageBuilder\Blocks;
+namespace CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks;
 
 use CarlJanzell\FilamentPageBuilder\Contracts\InlineEditable;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use CarlJanzell\FilamentPageBuilder\Editable;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 
 /**
- * A text box you drop anywhere and type into.
+ * A fixture that declares a rich-text field so the canvas can refuse inline writes to it.
  */
-class TextBlock implements InlineEditable, PageBlock
+class NoteBlock implements InlineEditable, PageBlock
 {
     /**
      * @return array<string, Editable>
@@ -18,38 +18,28 @@ class TextBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'body' => Editable::text()->multiline()->placeholder('Write something'),
+            'body' => Editable::richText(),
         ];
     }
 
     public static function type(): string
     {
-        return 'text';
+        return 'note';
     }
 
     public static function label(): string
     {
-        return 'Text';
+        return 'Note';
     }
 
     public static function icon(): ?string
     {
-        return 'heroicon-o-bars-3-bottom-left';
-    }
-
-    public static function category(): string
-    {
-        return 'content';
-    }
-
-    public static function description(): string
-    {
-        return 'A paragraph you can type into on the page.';
+        return null;
     }
 
     public static function view(): string
     {
-        return 'page-builder::components.text';
+        return 'blocks.heading';
     }
 
     /**
@@ -71,7 +61,7 @@ class TextBlock implements InlineEditable, PageBlock
     public static function schema(): array
     {
         return [
-            Textarea::make('body')->rows(4),
+            RichEditor::make('body'),
         ];
     }
 }

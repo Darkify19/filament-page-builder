@@ -29,7 +29,7 @@ Registered in `PageBuilderServiceProvider::registerAssets()` under the package k
 
 | JS calls | JS reads |
 |---|---|
-| `$wire.save()`, `undo()`, `redo()`, `selectBlock(id\|null)`, `duplicateBlock(id)`, `removeBlock(id)`, `moveBlock(id, to, parent, slot)`, `insertBlock(type, at, parent, slot)`, `setBlockField(id, field, value)` | `$wire.isDirty`, `$wire.selectedId` |
+| `$wire.save()`, `undo()`, `redo()`, `selectBlock(id\|null)`, `duplicateBlock(id)`, `removeBlock(id)`, `moveBlock(id, to, parent, slot)`, `insertBlock(type, at, parent, slot)`, `setBlockField(id, field, value)` | `$wire.isDirty`, `$wire.selectedId` (`revealGhost` is chrome-only, not called from JS) |
 
 ### The DOM contract (attributes the JS reads, and who emits them)
 
@@ -70,11 +70,12 @@ It is purely presentational and runs *after* state has already changed. When Ani
 
 | Keys | Action | While typing? |
 |---|---|---|
-| ⌘/Ctrl S, ⌘Z, ⇧⌘Z | save / undo / redo | **Intercepted anyway**: they're handled *before* `isTyping()`. Native text-undo inside inspector inputs and contenteditables is unavailable, and ⌘Z runs server undo. (Commit `c76513c` says all shortcuts are ignored while typing, but the code disagrees for these three.) |
+| ⌘/Ctrl S | save | Always: `flushActiveEditable()` (blur the field under the caret) then `$wire.save()` |
+| ⌘/Ctrl Z, ⇧⌘Z | undo / redo | **Ignored while typing**, so native character undo still works in inspector inputs and contenteditables |
 | ⌘D, Backspace/Delete, ↑/↓, ⇧↑/⇧↓ | duplicate / delete (confirmed if `data-has-content`) / walk the selection in canvas order / move among siblings | ignored |
 | Esc | deselect | inside an editable: reverts the text, with `stopPropagation` from the capture-phase root listener so it doesn't also deselect |
 
-`isTyping()` = `isContentEditable`, INPUT/TEXTAREA/SELECT, or inside `[contenteditable="true"]`. `⇧↑/↓` sends `to + 1` when moving down, which is the before-lift contract again.
+`isTyping()` = `isContentEditable`, INPUT/TEXTAREA/SELECT, or inside `[contenteditable]`. `⇧↑/↓` sends `to + 1` when moving down, which is the before-lift contract again.
 
 ---
 
@@ -82,9 +83,9 @@ It is purely presentational and runs *after* state has already changed. When Ani
 
 - `focusin` on a `[data-fpb-field]` records `innerText` as `data-fpb-original` and selects the block if it isn't already selected, so the inspector follows the caret.
 - **Commit on blur, never per keystroke.** A round trip per character would re-render the block under the caret. `Enter` blurs unless `data-fpb-multiline="true"`, and `Esc` restores the original text.
-- **⌘S while the caret is still in a field saves *without* that edit**: there's no blur, so no `setBlockField`. The status reads "All changes saved", and blurring afterwards makes the page dirty again. The toolbar button is safe because its click blurs first.
+- **⌘S flushes the active editable first** (`blur()`), so the blur-driven `setBlockField` lands before `save()`. The toolbar button is also safe because its click blurs first.
 - The global `Livewire.hook('morph.updating')` **skips morphing the focused editable**. Otherwise any re-render (a selection, an inspector field) rewrites the text under the caret and moves the caret to the end.
-- The value is `innerText`, which reports **rendered** text. A multiline field's element needs `white-space: pre-line` (or `pre-wrap`) in the block's CSS. Without it, a typed line break shows collapsed after the re-render, and the next edit writes the collapsed text back. The shipped `.fpb-text` currently has no `white-space` rule.
+- The value is `innerText`, which reports **rendered** text. A multiline field's element needs `white-space: pre-line` (or `pre-wrap`) in the block's CSS. The shipped `.fpb-text` has `white-space: pre-line`.
 
 Unsaved-work guards: `beforeunload` and Livewire's `livewire:navigate` (a `confirm()`), because Filament's SPA navigation never fires `beforeunload`. Both read `$wire.isDirty`.
 
@@ -94,7 +95,7 @@ Unsaved-work guards: `beforeunload` and Livewire's `livewire:navigate` (a `confi
 
 | Rule | Why |
 |---|---|
-| `body.fpb-edit-mode` hides `.fi-topbar-ctn`, `.fi-sidebar`, `.fi-sidebar-close-overlay`, `.fi-layout-sidebar-toggle-btn-ctn`, `.fi-header`, and zeroes margin/padding on `.fi-layout … .fi-page-content` | The full-screen editor. It's coupled to **Filament 5's internal class names**, and a rename in an upgrade silently brings the chrome back. `scripts/check-drift.sh` verifies them against `vendor/`. Below 1280 px the grid stacks and the page scrolls. |
+| `body.fpb-edit-mode` hides `.fi-topbar-ctn`, `.fi-sidebar`, `.fi-sidebar-close-overlay`, `.fi-layout-sidebar-toggle-btn-ctn`, `.fi-header`, and zeroes margin/padding on `.fi-layout … .fi-page-content` | The full-screen editor. It's coupled to **Filament 5's internal class names**, and a rename in an upgrade silently brings the chrome back. `scripts/check-drift.sh` verifies them against `vendor/`. Below 1280 px Alpine `workspace` + `.fpb-dock` show one panel (Blocks / Page / Settings) at `100dvh`. Drag is off; tap-to-insert and ↑/↓ on the selected bar reorder siblings. |
 | `.fpb-block-body { pointer-events: none }`; `[data-fpb-field]` and `.fpb-slot` set `auto` | A click anywhere selects the block, an editable takes a caret, and a slot accepts drops. **Links, buttons and Alpine widgets inside blocks (accordions, tabs) are inert on the canvas**, so content hidden behind interaction can only be edited in the inspector. |
 | `.fpb-canvas-frame { align-items: flex-start }` | Load-bearing. `stretch` pinned the canvas to the frame height, and with the canvas's `overflow: hidden` (kept for the rounded corners), a page taller than the viewport was clipped with no scroll (incident `29cc533`). |
 | Dark values on `html.dark .fpb`, not `:root` | An app setting `--fpb-editor-bg` / `--fpb-panel-bg` / `--fpb-raised-bg` on `:root` still wins in light mode. Chrome text colour is inherited from Filament, so only backgrounds need dark values (incident `a9dced0`). |
