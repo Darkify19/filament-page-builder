@@ -26,6 +26,11 @@ class DividerBlock implements PageBlock
         return 'design';
     }
 
+    public static function description(): string
+    {
+        return 'A horizontal rule.';
+    }
+
     public static function view(): string
     {
         return 'page-builder::components.divider';

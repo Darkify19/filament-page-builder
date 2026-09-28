@@ -2,8 +2,6 @@
 
 use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
 
-require_once __DIR__.'/DesignPageTest.php';
-
 it('writes a style token onto the selected block', function (): void {
     $canvas = canvas(page([block('a')]))
         ->call('selectBlock', 'a')

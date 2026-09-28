@@ -37,10 +37,15 @@ trait HasBlocks
     public static function ensureBlockIds(array $blocks): array
     {
         return array_values(array_map(
-            fn (array $block): array => [
-                'id' => $block['id'] ?? (string) Str::uuid(),
-                ...$block,
-            ],
+            function (array $block): array {
+                $id = $block['id'] ?? null;
+
+                if (! is_string($id) || $id === '') {
+                    $id = (string) Str::uuid();
+                }
+
+                return [...$block, 'id' => $id];
+            },
             array_filter($blocks, 'is_array'),
         ));
     }

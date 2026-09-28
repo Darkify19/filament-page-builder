@@ -2,8 +2,6 @@
 
 use CarlJanzell\FilamentPageBuilder\Support\BlockHistory;
 
-require_once __DIR__.'/DesignPageTest.php';
-
 it('starts with nothing to undo', function (): void {
     canvas(page([block('a')]))
         ->assertSet('canUndo', false)
@@ -14,11 +12,12 @@ it('undoes a reorder', function (): void {
     $canvas = canvas(page([block('a'), block('b')]))->call('moveBlock', 'a', 2);
 
     expect(ids($canvas))->toBe(['b', 'a']);
+    $canvas->assertSet('isDirty', true);
 
     $canvas->call('undo');
 
     expect(ids($canvas))->toBe(['a', 'b']);
-    $canvas->assertSet('canUndo', false)->assertSet('canRedo', true);
+    $canvas->assertSet('canUndo', false)->assertSet('canRedo', true)->assertSet('isDirty', false);
 });
 
 it('redoes what it undid', function (): void {

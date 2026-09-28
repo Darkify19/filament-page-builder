@@ -1,8 +1,12 @@
 @props(['data' => []])
 
-@if (filled($data['src'] ?? null))
+@php
+    $url = \CarlJanzell\FilamentPageBuilder\Support\MediaUrl::public($data['src'] ?? null);
+@endphp
+
+@if (filled($url))
     <figure class="fpb-image">
-        <img src="{{ $data['src'] }}" alt="{{ $data['alt'] ?? '' }}">
+        <img src="{{ $url }}" alt="{{ $data['alt'] ?? '' }}">
         @if (\CarlJanzell\FilamentPageBuilder\PageBuilder::shows('alt', $data['alt'] ?? ''))
             <figcaption @editable('alt')>{{ $data['alt'] ?? '' }}</figcaption>
         @endif

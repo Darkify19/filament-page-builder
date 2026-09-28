@@ -108,6 +108,58 @@ it('removes a container and its descendants', function (): void {
     expect(array_column(BlockTree::remove($blocks, 's'), 'id'))->toBe(['r']);
 });
 
+it('remints a colliding id so both copies survive flatten', function (): void {
+    $blocks = tree([
+        ['id' => 'dup', 'type' => 'heading', 'data' => ['text' => 'One']],
+        ['id' => 'dup', 'type' => 'heading', 'data' => ['text' => 'Two']],
+    ]);
+
+    expect($blocks)->toHaveCount(2)
+        ->and($blocks[0]['id'])->toBe('dup')
+        ->and($blocks[1]['id'])->not->toBe('dup')
+        ->and($blocks[0]['data']['text'])->toBe('One')
+        ->and($blocks[1]['data']['text'])->toBe('Two');
+});
+
+it('mints an id for a missing or empty one', function (): void {
+    $blocks = tree([
+        ['type' => 'heading', 'data' => []],
+        ['id' => '', 'type' => 'heading', 'data' => []],
+    ]);
+
+    expect($blocks[0]['id'])->toBeString()->not->toBe('')
+        ->and($blocks[1]['id'])->toBeString()->not->toBe('')
+        ->and($blocks[0]['id'])->not->toBe($blocks[1]['id']);
+});
+
+it('lists orphans and hidden-slot children as ghosts', function (): void {
+    $blocks = tree([
+        node('s', 'section', data: ['columns' => 2]),
+        node('hidden', 'text', 's', 'col-2'),
+        node('orphan', 'text', 'gone', 'col-0'),
+        node('ok', 'text', 's', 'col-0'),
+    ]);
+
+    $ghosts = BlockTree::ghosts($blocks, function (string $type, array $data): array {
+        $count = max(1, min(4, (int) ($data['columns'] ?? 2)));
+
+        return array_map(fn (int $i): string => 'col-'.$i, range(0, $count - 1));
+    });
+
+    expect($ghosts)->toHaveCount(2)
+        ->and(collect($ghosts)->firstWhere('id', 'hidden')['reason'])->toBe('hidden-slot')
+        ->and(collect($ghosts)->firstWhere('id', 'orphan')['reason'])->toBe('orphan');
+});
+
+it('accepts a valid HTML fragment identifier as an anchor', function (): void {
+    expect(BlockTree::isValidAnchor('intro'))->toBeTrue()
+        ->and(BlockTree::isValidAnchor('section-1'))->toBeTrue()
+        ->and(BlockTree::isValidAnchor('1start'))->toBeFalse()
+        ->and(BlockTree::isValidAnchor('has space'))->toBeFalse()
+        ->and(BlockTree::isValidAnchor(''))->toBeFalse()
+        ->and(BlockTree::isValidAnchor(null))->toBeFalse();
+});
+
 it('duplicates a subtree with fresh ids and remapped parents', function (): void {
     $blocks = tree([
         node('s', 'section'),

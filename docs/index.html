@@ -221,7 +221,9 @@ back again. If you later decide the canvas was a mistake, removing it costs you 
   <li>A document outline (Structure) that follows the tree</li>
   <li>Click a block to select it; edit it in an inspector on the right, using that block&rsquo;s own Filament schema</li>
   <li>A <strong>Style</strong> tab of design tokens — padding, background, width, alignment — not raw CSS</li>
-  <li>Desktop / tablet / mobile preview widths on the toolbar</li>
+  <li>Desktop / tablet / mobile <em>preview widths</em> on the toolbar (a <code>max-width</code>, plus <code>container-type</code> on <code>.fpb-canvas</code>)</li>
+  <li>Palette search, block descriptions, breadcrumbs, and a Hidden list for orphans and columns that were removed</li>
+  <li>An allowlisted <strong>Embed</strong> block, and an optional <strong>anchor</strong> id on every block</li>
   <li><strong>Type into the page itself</strong> — a block can open its own text fields for editing in place, and
       the inspector follows the caret</li>
   <li>Duplicate and delete, with a confirmation before anything holding content goes. Duplicating a section
@@ -229,6 +231,7 @@ back again. If you later decide the canvas was a mistake, removing it costs you 
   <li>Undo and redo, keyboard shortcuts, and a guard against leaving with unsaved work</li>
   <li>Blocks render with your real Blade components and your real CSS, not a stand-in</li>
   <li>Everything is held in memory and written on an explicit <strong>Save</strong>, so a drag never waits on the server</li>
+  <li>On a phone or a narrow window, Design mode is a <strong>one-panel editor</strong>: Blocks, Page and Settings in a bottom dock, a floating add button, and tap-to-insert (native drag is a desktop gesture)</li>
 </ul>
 
 <h3>What it deliberately does not do</h3>
@@ -590,7 +593,7 @@ public function panel(Panel $panel): Panel
                     CustomHtmlBlock::class,
                 ])
                 -&gt;canvasStylesView('filament.pages.canvas-styles'),
-                // Section, text, image, button, spacer and divider are registered
+                // Section, text, image, button, embed, spacer and divider are registered
                 // unless you pass -&gt;includeLayoutBlocks(false)
         ]);
 }</code></pre>
@@ -779,7 +782,7 @@ it is included inside the canvas so blocks render exactly as they do publicly:</
 <h4>Chrome classes you can override</h4>
 <p>All prefixed <code>fpb-</code>: <code>.fpb</code>, <code>.fpb-palette</code>, <code>.fpb-palette-item</code>,
 <code>.fpb-canvas</code>, <code>.fpb-block</code>, <code>.fpb-block-bar</code>, <code>.fpb-block-body</code>,
-<code>.fpb-drop-marker</code>, <code>.fpb-toolbar</code>, <code>.fpb-inspector</code>, <code>.fpb-empty</code>.
+<code>.fpb-drop-marker</code>, <code>.fpb-chrome</code>, <code>.fpb-toolbar-actions</code>, <code>.fpb-inspector</code>, <code>.fpb-empty</code>.
 The selected block carries <code>data-selected="true"</code>.</p>
 
 <h2 id="assets">Assets, and why there is no bundler <a class="anchor" href="#assets">#</a></h2>
@@ -794,8 +797,8 @@ is a feature: a package that makes consumers run a JS build is a worse package.<
   <li>Drag-and-drop uses the browser&rsquo;s native HTML5 API. Filament bundles SortableJS but does not expose it
       as a public global, so relying on it would mean either a build step or a private API.</li>
   <li>Reactivity uses Alpine, which Filament already bundles.</li>
-  <li><code>php artisan filament:assets</code> publishes them; if your deploy runs <code>filament:optimize</code>
-      you are already covered.</li>
+  <li><code>php artisan filament:assets</code> (or <code>filament:upgrade</code>) publishes them.
+      <code>filament:optimize</code> does <em>not</em>.</li>
 </ul>
 
 <p>Reordering is resolved entirely in the browser and committed to Livewire in a single call per drop, so no
@@ -815,10 +818,10 @@ drag gesture waits on a round trip.</p>
 <thead><tr><th>Method</th><th>Effect</th></tr></thead>
 <tbody>
 <tr><td><code>blocks(array $classes)</code></td><td>Your block classes. Layout primitives are registered in front unless disabled.</td></tr>
-<tr><td><code>includeLayoutBlocks(bool $on = true)</code></td><td>Whether section, text, image, button, spacer and divider appear. Default true.</td></tr>
+<tr><td><code>includeLayoutBlocks(bool $on = true)</code></td><td>Whether section, text, image, button, embed, spacer and divider appear. Default true.</td></tr>
 <tr><td><code>styleTokens(array $tokens)</code></td><td>The Style tab&rsquo;s knobs. Default padding/background/width/align.</td></tr>
 <tr><td><code>canvasStylesView(?string $view)</code></td><td>A Blade view included inside the canvas, before the blocks.</td></tr>
-<tr><td><code>recordModel(string $model)</code></td><td>The model whose records the builder edits.</td></tr>
+<tr><td><code>recordModel(string $model)</code></td><td>Stored for documentation and future scaffolding. The canvas does not read it &mdash; it edits the resource record.</td></tr>
 <tr><td><code>blocksAttribute(string $attr)</code></td><td>The JSON attribute holding the blocks. A record using <code>HasBlocks</code> may override it for itself.</td></tr>
 <tr><td><code>FilamentPageBuilderPlugin::get()</code></td><td>The registered instance, from anywhere.</td></tr>
 </tbody>
@@ -842,6 +845,7 @@ drag gesture waits on a round trip.</p>
 <tr><td><code>slots(?string $type, array $data)</code></td><td>Slot names that instance currently exposes.</td></tr>
 <tr><td><code>defaults(?string $type)</code></td><td>Starting data for a freshly dropped block.</td></tr>
 <tr><td><code>category(?string $type)</code></td><td>Palette group. App blocks default to <code>blocks</code>.</td></tr>
+<tr><td><code>description(?string $type)</code></td><td>Optional one-line palette subtitle, or <code>null</code>.</td></tr>
 </tbody>
 </table>
 </div>
@@ -854,18 +858,20 @@ drag gesture waits on a round trip.</p>
 <tbody>
 <tr><td><code>moveBlock(string $id, int $to, ?string $parent = null, ?string $slot = null)</code></td><td>Reorder, or move into a container slot.</td></tr>
 <tr><td><code>insertBlock(string $type, ?int $at = null, ?string $parent = null, ?string $slot = null)</code></td><td>Insert at an index, or into a slot. A palette click with a selection inserts after it, or into its first column. Refused unless authorised.</td></tr>
-<tr><td><code>duplicateBlock(string $id)</code></td><td>Copy in place with a fresh id. Refused unless authorised.</td></tr>
+<tr><td><code>duplicateBlock(string $id)</code></td><td>Copy in place with a fresh id. Refused unless the type <em>and every descendant</em> is authorable.</td></tr>
 <tr><td><code>removeBlock(string $id)</code></td><td>Delete. No confirmation.</td></tr>
+<tr><td><code>revealGhost(string $id)</code></td><td>Move an orphan onto the page, or a hidden-slot child into the parent&rsquo;s last visible column.</td></tr>
 <tr><td><code>selectBlock(?string $id)</code></td><td>Select a block and load it into the inspector.</td></tr>
-<tr><td><code>save()</code></td><td>Commit the inspector, write the column, notify.</td></tr>
+<tr><td><code>save()</code></td><td>Commit the inspector, refuse if <code>updated_at</code> changed elsewhere, write the column, notify.</td></tr>
 <tr><td><code>isSelectedBlockEditable()</code></td><td>Whether the inspector should show fields for the selection.</td></tr>
 </tbody>
 </table>
 </div>
 <p>Public properties: <code>$blocks</code>, <code>$selectedId</code>, <code>$blockData</code>,
-<code>$blockSettings</code>, <code>$isDirty</code>. Computed: <code>$this-&gt;rootBlocks</code>,
+<code>$blockSettings</code>, <code>$blockAnchor</code>, <code>$savedBlocks</code>,
+<code>$loadedUpdatedAt</code>, <code>$isDirty</code>. Computed: <code>$this-&gt;rootBlocks</code>,
 <code>$this-&gt;renderableBlocks</code>, <code>$this-&gt;palette</code>, <code>$this-&gt;paletteGroups</code>,
-<code>$this-&gt;structure</code>.</p>
+<code>$this-&gt;structure</code>, <code>$this-&gt;ghosts</code>, <code>$this-&gt;selectionPath</code>.</p>
 
 <h3><code>HasBlocks</code> <span class="pill">optional</span></h3>
 <p>A convenience trait for your model — <code>getBlocks()</code> returns the array defensively, and
@@ -880,8 +886,8 @@ fixed and are gone from this list.</p>
 
 <h4>Rich text is still edited in the inspector, not in place</h4>
 <p>Plain text fields are edited directly on the page. A <code>RichEditor</code> still opens on the right.
-TipTap owns that HTML format and a second, hand-rolled producer of it would drift from the first — the
-intended fix is to mount Filament&rsquo;s own TipTap bundle in place, not to write another one.</p>
+<code>setBlockField()</code> refuses <code>richText</code> writes until Filament&rsquo;s TipTap bundle is
+mounted in place. Do not ship a second HTML producer.</p>
 
 <h4>Inline editing is limited to top-level string fields</h4>
 <p><code>setBlockField()</code> writes one named field on one block. Fields inside a repeater cannot be edited
@@ -889,11 +895,29 @@ in place, and only fields the block names in <code>editables()</code> can be wri
 
 <h4>No draft, no revisions</h4>
 <p>Saving writes straight to the record the public site reads. There is no draft copy to promote and no history
-to restore from — undo lives only as long as the canvas is open.</p>
+to restore from — undo lives only as long as the canvas is open. Save compares <code>updated_at</code> so a
+second tab or the form editor cannot silently overwrite the other; you still have to reload after a conflict.</p>
 
 <h4>Undo history is per session, not per tab</h4>
-<p>The undo stack is held in the session so it costs the Livewire payload nothing. Two canvases open in two tabs
-share one session, so opening a second discards the first&rsquo;s history.</p>
+<p>The undo stack is held in the session so it costs the Livewire payload nothing. Use a server-side session
+driver (file, database, redis) — thirty snapshots of a large page will overflow a cookie session. Two canvases
+open in two tabs share one session, so opening a second discards the first&rsquo;s history.</p>
+
+<h4>The form editor is unsafe once a page is nested</h4>
+<p>Filament&rsquo;s <code>Builder</code> has no tree. Cloning an item used to copy the id (the canvas now remints
+it). Deleting a section still orphans its children — they appear under Structure &rarr; Hidden. The canvas
+warns before opening the form editor on a nested page. Prefer the canvas for anything with columns.</p>
+
+<h4>On a phone, drag-and-drop is off</h4>
+<p>Native HTML5 drag is a desktop gesture. Below 1280px the Design canvas uses tap-to-insert,
+up / down on the selected block to reorder siblings, and the bottom dock to reach Blocks
+and Settings. Nesting into a specific column still wants a wider window, or a section
+selected so a tap lands in its first column. SortableJS is not vendored.</p>
+
+<h4>JavaScript is untested</h4>
+<p>Drag, drop, inline commit and keyboard shortcuts have no browser tests. Renaming a Livewire method or a
+<code>data-*</code> attribute breaks the canvas silently. Run <code>scripts/check-drift.sh</code> after those
+edits, then click through a real panel.</p>
 
 <h4>Unregistered block types cannot be edited</h4>
 <p>They are no longer destroyed — a retired type keeps its place and its content through a save, and can be moved

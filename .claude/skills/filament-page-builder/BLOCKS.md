@@ -23,6 +23,7 @@ Related: [RENDERING.md](RENDERING.md) (how the view is invoked, and slots), [CAN
 |---|---|---|
 | `defaults(): array` | `insertBlock()` seeds `data`, and `blockHasContent()` treats values equal to the defaults as "not content" so an untouched drop deletes without a confirmation | `[]` |
 | `category(): string` | Palette group. `layout` / `content` / `design` / `blocks` have labels, anything else gets `ucfirst()` | `'blocks'` |
+| `description(): string` | Optional one-line palette subtitle | `null` |
 
 **`Contracts\Container`** (implemented by `SectionBlock`) requires `slots(array $data): array` (the slot names *this instance* exposes, derived from its data) and `defaults()`. The canvas drop targets, the outline and the public renderer all ask `slots()`, so changing a section's column count is a data change and not a new type.
 
@@ -49,7 +50,7 @@ Related: [RENDERING.md](RENDERING.md) (how the view is invoked, and slots), [CAN
 
 `register()` keys by `type()`, so **a later class with the same type replaces the earlier one**. `FilamentPageBuilderPlugin::register()` registers `[...layoutBlockClasses(), ...$this->blocks]`, so an app class overrides a shipped primitive. It keeps the primitive's position in the palette, because PHP key reassignment preserves order. A non-`PageBlock` class throws `InvalidArgumentException` when the panel is built. `includeLayoutBlocks(false)` drops the primitives entirely (the test panels do this).
 
-`FilamentPageBuilderPlugin::recordModel()` is **accepted, stored, and read by nothing**. ROADMAP 0.3 and the docs present it as honoured, but only `blocksAttribute()` actually is. Don't build on it without wiring it up first.
+`FilamentPageBuilderPlugin::recordModel()` is **accepted, stored, and read by nothing**. The docs say so. Don't build on it without wiring it up first.
 
 ---
 
@@ -57,14 +58,15 @@ Related: [RENDERING.md](RENDERING.md) (how the view is invoked, and slots), [CAN
 
 | type | Class | category | Editables | Data / notes |
 |---|---|---|---|---|
-| `section` | `SectionBlock` (Container) | layout | none | `defaults()` `columns: 2, ratio: '1-1'`. `slots()` = `col-0 … col-{n-1}`, with `columns` clamped to **1–4** (the view clamps too). **`ratio` doesn't follow `columns`**: picking 3 columns while `ratio` is still `'1-1'` gives a 2-track grid, and the third column wraps to a new row. The view derives a ratio only when `ratio` is absent. |
-| `text` | `TextBlock` | content | `body`: text, **multiline**, placeholder | A `<p class="fpb-text">`. It needs `white-space: pre-line` for multiline to survive, see FRONTEND.md. |
-| `image` | `ImageBlock` | content | `alt`: text | `FileUpload('src')->disk('public')->directory('pages')`. **Bug:** the view prints `src="{{ $data['src'] }}"` raw, so a stored `pages/x.jpg` becomes a relative URL and breaks once saved. It only works mid-upload, when the normaliser supplies Livewire's absolute temporary URL. The docs' HeroBlock example shows the correct `Storage::disk('public')->url(...)`. |
-| `button` | `ButtonBlock` | content | `label`: text | `url` is a `TextInput` with only `maxLength`. A `javascript:` URL passes and lands in `href`. Validate it if untrusted editors can author buttons (it's visible to everyone by default). |
+| `section` | `SectionBlock` (Container) | layout | none | `defaults()` `columns: 2, ratio: '1-1'`. `slots()` = `col-0 … col-{n-1}`, columns clamped to **1–4**. `ratioFor()` / the view ignore a leftover two-track ratio when the count is 3 or 4. Changing columns live resets `ratio`. |
+| `text` | `TextBlock` | content | `body`: text, **multiline**, placeholder | A `<p class="fpb-text">` with `white-space: pre-line`. |
+| `image` | `ImageBlock` | content | `alt`: text | `FileUpload('src')->disk('public')->directory('pages')`. The view resolves a stored path through `MediaUrl::public()`. |
+| `button` | `ButtonBlock` | content | `label`: text | `url` is inspector-only. `SafeUrl` allows http(s), mailto, tel, `#`, same-site paths. `javascript:` / `data:` become `href="#"`. |
+| `embed` | `EmbedBlock` | content | none | Allowlisted YouTube / Vimeo / Maps iframe. Other hosts render a placeholder. |
 | `spacer` | `SpacerBlock` | design | none | `defaults()` `height: 'md'` → `data-fpb-height`. |
 | `divider` | `DividerBlock` | design | none | An empty schema. |
 
-All six return `isVisible() === true`. They are the reference implementations: `SectionBlock` for a container, `TextBlock` / `ButtonBlock` for inline-editable leaves.
+All seven return `isVisible() === true`. They are the reference implementations: `SectionBlock` for a container, `TextBlock` / `ButtonBlock` for inline-editable leaves.
 
 ---
 
