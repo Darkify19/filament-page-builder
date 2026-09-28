@@ -2,6 +2,8 @@
     <div
         class="fpb"
         x-data="pageBuilderCanvas()"
+        :data-workspace="workspace"
+        :data-narrow="narrow ? 'true' : 'false'"
         wire:key="fpb-{{ $this->getRecord()->getKey() }}"
     >
         <header class="fpb-chrome">
@@ -33,7 +35,7 @@
                 </span>
             </div>
 
-            <div class="fpb-preview-toggle" role="group" aria-label="Preview width">
+            <div class="fpb-preview-toggle fpb-desktop-only" role="group" aria-label="Preview width">
                 <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'desktop'" :data-active="preview === 'desktop'" x-on:click="preview = 'desktop'">Desktop</button>
                 <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'tablet'" :data-active="preview === 'tablet'" x-on:click="preview = 'tablet'">Tablet <span class="fpb-preview-px">768</span></button>
                 <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'mobile'" :data-active="preview === 'mobile'" x-on:click="preview = 'mobile'">Mobile <span class="fpb-preview-px">390</span></button>
@@ -59,26 +61,28 @@
                 />
 
                 @if ($formEditorUrl = $this->formEditorUrl())
-                    @if ($this->hasNestedBlocks())
-                        <x-filament::button
-                            tag="a"
-                            href="{{ $formEditorUrl }}"
-                            color="gray"
-                            size="sm"
-                            x-on:click="if (! confirm('This page uses columns. The form view cannot show that layout correctly and may delete or duplicate content. Open anyway?')) { $event.preventDefault() }"
-                        >
-                            Form editor
-                        </x-filament::button>
-                    @else
-                        <x-filament::button
-                            tag="a"
-                            href="{{ $formEditorUrl }}"
-                            color="gray"
-                            size="sm"
-                        >
-                            Form editor
-                        </x-filament::button>
-                    @endif
+                    <span class="fpb-desktop-only">
+                        @if ($this->hasNestedBlocks())
+                            <x-filament::button
+                                tag="a"
+                                href="{{ $formEditorUrl }}"
+                                color="gray"
+                                size="sm"
+                                x-on:click="if (! confirm('This page uses columns. The form view cannot show that layout correctly and may delete or duplicate content. Open anyway?')) { $event.preventDefault() }"
+                            >
+                                Form editor
+                            </x-filament::button>
+                        @else
+                            <x-filament::button
+                                tag="a"
+                                href="{{ $formEditorUrl }}"
+                                color="gray"
+                                size="sm"
+                            >
+                                Form editor
+                            </x-filament::button>
+                        @endif
+                    </span>
                 @endif
 
                 <x-filament::button
@@ -91,7 +95,7 @@
             </div>
         </header>
 
-        <aside class="fpb-panel fpb-palette">
+        <aside class="fpb-panel fpb-palette" x-show="!narrow || workspace === 'blocks'">
             <div class="fpb-side-tabs" role="tablist" aria-label="Blocks and outline">
                 <button
                     type="button"
@@ -146,8 +150,10 @@
                                         class="fpb-palette-item"
                                         draggable="true"
                                         data-type="{{ $item['type'] }}"
+                                        :draggable="!narrow"
                                         x-on:dragstart="startInsert($event, '{{ $item['type'] }}')"
                                         x-on:dragend="clearDrag()"
+                                        x-on:click="afterPaletteInsert()"
                                         wire:click="insertBlock('{{ $item['type'] }}')"
                                     >
                                         @if ($item['icon'])
@@ -189,7 +195,7 @@
                             @foreach ($this->ghosts as $ghost)
                                 <li>
                                     <span>{{ $ghost['label'] }}</span>
-                                    <button type="button" class="fpb-ghost-reveal" wire:click="revealGhost('{{ $ghost['id'] }}')">
+                                    <button type="button" class="fpb-ghost-reveal" wire:click="revealGhost('{{ $ghost['id'] }}')" x-on:click="afterRevealOnCanvas()">
                                         {{ $ghost['reason'] === 'orphan' ? 'Move to page' : 'Move to last column' }}
                                     </button>
                                 </li>
@@ -199,7 +205,7 @@
                 @endif
             </div>
 
-            <dl class="fpb-shortcuts">
+            <dl class="fpb-shortcuts fpb-desktop-only">
                 <dt x-text="isMac ? '⌘S' : 'Ctrl+S'">Ctrl+S</dt><dd>Save</dd>
                 <dt x-text="isMac ? '⌘Z' : 'Ctrl+Z'">Ctrl+Z</dt><dd>Undo</dd>
                 <dt x-text="isMac ? '⇧⌘Z' : 'Ctrl+Shift+Z'">Ctrl+Shift+Z</dt><dd>Redo</dd>
@@ -211,7 +217,7 @@
             </dl>
         </aside>
 
-        <main class="fpb-canvas-wrap">
+        <main class="fpb-canvas-wrap" x-show="!narrow || workspace === 'canvas'">
             <div class="fpb-canvas-frame">
                 <div
                     class="fpb-canvas"
@@ -228,7 +234,10 @@
                     @empty
                         <div class="fpb-empty">
                             <p class="fpb-empty-title">Start a layout</p>
-                            <p class="fpb-empty-copy">Add a row of columns, or drop a block from the left.</p>
+                            <p class="fpb-empty-copy">
+                                <span class="fpb-empty-copy-wide">Add a row of columns, or drop a block from the left.</span>
+                                <span class="fpb-empty-copy-narrow">Add a row of columns, or tap Blocks to pick one.</span>
+                            </p>
                             <div class="fpb-empty-actions">
                                 @foreach (array_slice($this->palette, 0, 3) as $item)
                                     <button
@@ -244,13 +253,16 @@
             </div>
         </main>
 
-        <aside class="fpb-panel fpb-inspector">
+        <aside class="fpb-panel fpb-inspector" x-show="!narrow || workspace === 'settings'">
             <h2 class="fpb-panel-title">
                 {{ $this->selectedId ? 'Block settings' : 'Nothing selected' }}
             </h2>
 
             @if (! $this->selectedId)
-                <p class="fpb-panel-hint">Click a block on the page to edit its content and look.</p>
+                <p class="fpb-panel-hint">
+                    <span class="fpb-empty-copy-wide">Click a block on the page to edit its content and look.</span>
+                    <span class="fpb-empty-copy-narrow">Select a block on the Page tab, then come back here to edit it.</span>
+                </p>
             @else
                 <div class="fpb-inspector-tabs" role="tablist" aria-label="Block inspector">
                     <button type="button" role="tab" id="fpb-tab-content" class="fpb-side-tab" aria-controls="fpb-panel-content" :aria-selected="inspectorTab === 'content'" :data-active="inspectorTab === 'content'" x-on:click="inspectorTab = 'content'">Content</button>
@@ -314,5 +326,44 @@
                 </div>
             @endif
         </aside>
+
+        <button
+            type="button"
+            class="fpb-add"
+            x-show="narrow && workspace === 'canvas'"
+            x-cloak
+            x-on:click="showWorkspace('blocks')"
+            aria-label="Add a block"
+        >+</button>
+
+        <nav class="fpb-dock" x-show="narrow" x-cloak role="tablist" aria-label="Design workspace">
+            <button
+                type="button"
+                role="tab"
+                class="fpb-dock-btn"
+                :aria-selected="workspace === 'blocks'"
+                :data-active="workspace === 'blocks'"
+                x-on:click="showWorkspace('blocks')"
+            >Blocks</button>
+            <button
+                type="button"
+                role="tab"
+                class="fpb-dock-btn"
+                :aria-selected="workspace === 'canvas'"
+                :data-active="workspace === 'canvas'"
+                x-on:click="showWorkspace('canvas')"
+            >Page</button>
+            <button
+                type="button"
+                role="tab"
+                class="fpb-dock-btn"
+                :aria-selected="workspace === 'settings'"
+                :data-active="workspace === 'settings'"
+                x-on:click="showWorkspace('settings')"
+            >
+                Settings
+                <span class="fpb-dock-dot" x-show="$wire.selectedId" x-cloak aria-hidden="true"></span>
+            </button>
+        </nav>
     </div>
 </x-filament-panels::page>

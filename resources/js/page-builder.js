@@ -122,6 +122,12 @@ document.addEventListener('alpine:init', () => {
         preview: 'desktop',
         paletteQuery: '',
         isMac: typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform),
+        /**
+         * Below 1280px the three columns cannot sit together. One workspace at a
+         * time, switched from the dock: blocks · canvas · settings.
+         */
+        workspace: 'canvas',
+        narrow: typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 1280px)').matches,
 
         /* ── Motion bookkeeping (not reactive state the template reads) ─── */
 
@@ -158,6 +164,8 @@ document.addEventListener('alpine:init', () => {
             // can be animated without every one of them having to say so.
             this.bind(this.$root, 'pointerdown', () => this.captureRects(), true);
 
+            this.watchNarrow();
+
             this.seen = new Set(this.order());
             this.watchCanvas();
         },
@@ -174,6 +182,67 @@ document.addEventListener('alpine:init', () => {
             this.observer?.disconnect();
             this.observer = null;
             this.stopAutoscroll();
+        },
+
+        /**
+         * Treat a laptop split-screen or a phone as a one-panel editor.
+         *
+         * The desktop grid needs ~16 + 20 rem of side chrome. Stacking all three
+         * columns and scrolling the page used to bury the canvas. The dock keeps
+         * the editor at 100dvh and shows one surface.
+         */
+        watchNarrow() {
+            if (typeof window.matchMedia !== 'function') {
+                return;
+            }
+
+            const query = window.matchMedia('(max-width: 1280px)');
+            const sync = () => {
+                this.narrow = query.matches;
+            };
+
+            sync();
+
+            if (typeof query.addEventListener === 'function') {
+                query.addEventListener('change', sync);
+                this.teardown.push(() => query.removeEventListener('change', sync));
+
+                return;
+            }
+
+            query.addListener(sync);
+            this.teardown.push(() => query.removeListener(sync));
+        },
+
+        showWorkspace(name) {
+            this.workspace = name;
+
+            if (name === 'blocks') {
+                this.sideTab = 'blocks';
+            }
+
+            if (name === 'settings') {
+                this.inspectorTab = 'content';
+            }
+        },
+
+        /**
+         * After a palette tap on a narrow viewport, go back to the page so the
+         * new block is visible. Desktop keeps all three columns.
+         */
+        afterPaletteInsert() {
+            if (this.narrow) {
+                this.workspace = 'canvas';
+            }
+        },
+
+        /**
+         * Outline and ghost actions select a block that lives on the canvas.
+         */
+        afterRevealOnCanvas() {
+            if (this.narrow) {
+                this.workspace = 'canvas';
+            }
         },
 
         bind(target, event, handler, capture = false) {

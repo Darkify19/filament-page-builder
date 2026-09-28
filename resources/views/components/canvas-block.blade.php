@@ -33,13 +33,40 @@
             class="fpb-block-handle"
             title="Drag to move"
             aria-label="Move {{ $label }}"
-            draggable="true"
+            :draggable="!narrow"
             x-on:dragstart.stop="startMove($event, '{{ $block['id'] }}')"
             x-on:dragend="clearDrag()"
             x-on:click.stop
         >&#8942;&#8942;</button>
         <span class="fpb-block-label">{{ $label }}</span>
         <span class="fpb-block-tools">
+            <button
+                type="button"
+                class="fpb-block-nudge"
+                title="Move up"
+                aria-label="Move {{ $label }} up"
+                x-show="narrow"
+                x-cloak
+                x-on:click.stop="moveSelected('{{ $block['id'] }}', -1)"
+            >↑</button>
+            <button
+                type="button"
+                class="fpb-block-nudge"
+                title="Move down"
+                aria-label="Move {{ $label }} down"
+                x-show="narrow"
+                x-cloak
+                x-on:click.stop="moveSelected('{{ $block['id'] }}', 1)"
+            >↓</button>
+            <button
+                type="button"
+                class="fpb-block-edit"
+                title="Edit"
+                aria-label="Edit {{ $label }}"
+                x-show="narrow"
+                x-cloak
+                x-on:click.stop="showWorkspace('settings')"
+            >Edit</button>
             <button type="button" title="Duplicate" aria-label="Duplicate {{ $label }}"
                     wire:click.stop="duplicateBlock('{{ $block['id'] }}')">&#10697;</button>
             <button type="button" title="Delete" aria-label="Delete {{ $label }}"

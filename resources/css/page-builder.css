@@ -221,8 +221,13 @@ html.dark .fpb {
 }
 .fpb-block-handle:active { cursor: grabbing; }
 .fpb-block-label { text-transform: uppercase; letter-spacing: 0.04em; margin-right: auto; }
+.fpb-block-tools { display: flex; align-items: center; gap: 0.1rem; }
 .fpb-block-tools button { color: #fff; padding: 0 0.2rem; cursor: pointer; background: none; border: 0; }
 .fpb-block-tools button:hover { color: #fca5a5; }
+.fpb-block-edit {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 0 0.35rem;
+}
 
 .fpb-block-body { pointer-events: none; }
 
@@ -321,6 +326,7 @@ body.fpb-edit-mode .fpb-slot[data-drop-active="true"] {
 .fpb-empty { padding: 3rem 1rem; text-align: center; font-size: 0.9rem; }
 .fpb-empty-title { margin: 0 0 0.35rem; font-weight: 650; }
 .fpb-empty-copy { margin: 0 0 1rem; opacity: 0.65; }
+.fpb-empty-copy-narrow { display: none; }
 .fpb-empty-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
 .fpb-empty-btn {
     padding: 0.45rem 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(37, 99, 235, 0.35);
@@ -480,26 +486,142 @@ body.fpb-edit-mode .fi-main-ctn {
     display: flex;
 }
 
+.fpb-dock,
+.fpb-add { display: none; }
+
 @media (max-width: 1280px) {
+    /*
+     * One workspace at a time. Stacking palette + canvas + inspector made the
+     * editor a tall scroll on a phone or a split laptop. The dock keeps 100dvh
+     * and Alpine shows the active panel.
+     */
     html:has(body.fpb-edit-mode),
     body.fpb-edit-mode {
-        height: auto;
-        overflow: auto;
+        height: 100%;
+        overflow: hidden;
     }
 
     .fpb {
+        position: relative;
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto minmax(28rem, 1fr) auto;
-        height: auto;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        height: 100dvh;
         min-height: 100dvh;
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
     .fpb-chrome {
         flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.45rem 0.7rem;
     }
 
-    .fpb-palette { border-right: 0; border-bottom: 1px solid rgba(128, 128, 128, 0.22); }
-    .fpb-inspector { border-left: 0; border-top: 1px solid rgba(128, 128, 128, 0.22); }
+    .fpb-chrome-start { gap: 0.45rem; }
+    .fpb-chrome-title { font-size: 0.85rem; max-width: 40vw; }
+    .fpb-crumbs { display: none; }
+    .fpb-desktop-only { display: none !important; }
+
+    .fpb-palette,
+    .fpb-inspector,
+    .fpb-canvas-wrap {
+        grid-column: 1;
+        grid-row: 2;
+        border: 0;
+        min-height: 0;
+    }
+
+    .fpb-empty-copy-wide { display: none; }
+    .fpb-empty-copy-narrow { display: inline; }
+
+    .fpb-canvas-frame { padding: 0.75rem; }
+
+    .fpb-block[data-selected="true"] > .fpb-block-bar {
+        opacity: 1;
+        position: sticky;
+        top: 0;
+    }
+
+    .fpb-block-handle { display: none; }
+
+    .fpb-block-handle,
+    .fpb-block-tools button {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        touch-action: manipulation;
+    }
+
+    .fpb-palette-item,
+    .fpb-empty-btn,
+    .fpb-token-pick,
+    .fpb-structure-btn,
+    .fpb-dock-btn,
+    .fpb-ghost-reveal {
+        min-height: 2.75rem;
+        touch-action: manipulation;
+    }
+
+    .fpb-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        right: 1rem;
+        bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+        z-index: 4;
+        width: 3.25rem;
+        height: 3.25rem;
+        border: 0;
+        border-radius: 999px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 1.75rem;
+        font-weight: 500;
+        line-height: 1;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+        touch-action: manipulation;
+    }
+
+    .fpb-dock {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-column: 1;
+        grid-row: 3;
+        gap: 0.25rem;
+        padding: 0.35rem 0.45rem;
+        padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(128, 128, 128, 0.22);
+        background: var(--fpb-panel-bg, #fff);
+        z-index: 4;
+    }
+
+    .fpb-dock-btn {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border: 0;
+        border-radius: 0.5rem;
+        background: transparent;
+        color: inherit;
+        font-size: 0.78rem;
+        font-weight: 650;
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
+    .fpb-dock-btn[data-active="true"] {
+        background: var(--fpb-raised-bg, #fff);
+        opacity: 1;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .fpb-dock-dot {
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 999px;
+        background: #2563eb;
+    }
 }
 
 /*
