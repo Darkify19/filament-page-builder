@@ -49,7 +49,7 @@ Departmental CMS safety and editing depth.
 | X7 | Visual token pickers + breadcrumbs | M | — | **Done** — same stored strings |
 | X8 | Starter layout gallery (insert-a-tree mechanism) | M | N2 | App replaces presets |
 | X9 | Structure: collapse, icons, reveal, later outline DnD | M | — | |
-| X10 | Narrow-layout panel switcher | M | — | Below 1280px |
+| X10 | Narrow-layout panel switcher | M | — | **Done** — Blocks / Page / Settings dock, floating +, selected Edit |
 | X11 | `container-type` on `.fpb-canvas` + docs | S | — | **Done** |
 | X12 | Per-breakpoint visibility in the style inspector | M | X11 | ROADMAP §4.3, never shipped |
 | X13 | Copy / paste subtree (`localStorage`) | S–M | N4, B5 | Remint ids on paste |

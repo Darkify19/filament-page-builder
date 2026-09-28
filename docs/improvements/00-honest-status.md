@@ -31,7 +31,8 @@ JavaScript is still untested.
 | Guards | `beforeunload` + `livewire:navigate`; delete confirm; optimistic `updated_at` lock |
 | Keyboard | ⌘/Ctrl S flushes the active editable first; Z / ⇧Z ignored while typing |
 | Style tokens | Defaults: `padding`, `background`, `width`, `align`. Visual picks, not only a select |
-| Responsive preview | `max-width` 768 / 390 on `.fpb-canvas` plus `container-type: inline-size` |
+| Responsive preview | `max-width` 768 / 390 on `.fpb-canvas` plus `container-type: inline-size`. Hidden on the narrow editor (the phone *is* the viewport) |
+| Narrow Design mode | Bottom dock (Blocks / Page / Settings), floating add, tap-to-insert, 44px tools, safe-area padding. Native drag is off below 1280px |
 | Inline edit | `Editable::text()` only. `richText` is refused on `setBlockField` |
 | Tests | Pest + Livewire. **Zero** browser / JS tests. Shared helpers live in `tests/Support/helpers.php` |
 | Assets | Hand-written JS + CSS; Anime.js 3.2.2 vendored. **No SortableJS** |

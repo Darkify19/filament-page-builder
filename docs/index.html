@@ -231,6 +231,7 @@ back again. If you later decide the canvas was a mistake, removing it costs you 
   <li>Undo and redo, keyboard shortcuts, and a guard against leaving with unsaved work</li>
   <li>Blocks render with your real Blade components and your real CSS, not a stand-in</li>
   <li>Everything is held in memory and written on an explicit <strong>Save</strong>, so a drag never waits on the server</li>
+  <li>On a phone or a narrow window, Design mode is a <strong>one-panel editor</strong>: Blocks, Page and Settings in a bottom dock, a floating add button, and tap-to-insert (native drag is a desktop gesture)</li>
 </ul>
 
 <h3>What it deliberately does not do</h3>
@@ -906,6 +907,12 @@ open in two tabs share one session, so opening a second discards the first&rsquo
 <p>Filament&rsquo;s <code>Builder</code> has no tree. Cloning an item used to copy the id (the canvas now remints
 it). Deleting a section still orphans its children — they appear under Structure &rarr; Hidden. The canvas
 warns before opening the form editor on a nested page. Prefer the canvas for anything with columns.</p>
+
+<h4>On a phone, drag-and-drop is off</h4>
+<p>Native HTML5 drag is a desktop gesture. Below 1280px the Design canvas uses tap-to-insert,
+up / down on the selected block to reorder siblings, and the bottom dock to reach Blocks
+and Settings. Nesting into a specific column still wants a wider window, or a section
+selected so a tap lands in its first column. SortableJS is not vendored.</p>
 
 <h4>JavaScript is untested</h4>
 <p>Drag, drop, inline commit and keyboard shortcuts have no browser tests. Renaming a Livewire method or a

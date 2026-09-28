@@ -8,7 +8,8 @@ content as an ordered array of typed blocks in a single JSON column.
 > **Status: the canvas is a nested layout editor.** Palette with layout
 > primitives (including Embed), drag into columns, a document outline, token style
 > inspector, inline plaintext editing, undo/redo, ghost recovery and an optimistic
-> save lock — all persisting to the same JSON the form editor uses. Still to come:
+> save lock — all persisting to the same JSON the form editor uses. On a phone,
+> Design mode is a one-panel editor (Blocks / Page / Settings). Still to come:
 > rich text in place, an image picker, draft/publish and reusable sections. See
 > [ROADMAP.md](ROADMAP.md) and the [improvement pack](docs/improvements/README.md).
 
