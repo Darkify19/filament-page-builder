@@ -19,8 +19,8 @@ class QuoteBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'text' => Editable::text()->multiline()->placeholder('Write the quotation'),
-            'cite' => Editable::text()->placeholder('Who said it'),
+            'text' => Editable::text()->multiline()->placeholder(__('page-builder::blocks.quote.placeholder')),
+            'cite' => Editable::text()->placeholder(__('page-builder::blocks.quote.cite_placeholder')),
         ];
     }
 
@@ -31,7 +31,7 @@ class QuoteBlock implements InlineEditable, PageBlock
 
     public static function label(): string
     {
-        return 'Quote';
+        return __('page-builder::blocks.quote.label');
     }
 
     public static function icon(): ?string
@@ -46,7 +46,7 @@ class QuoteBlock implements InlineEditable, PageBlock
 
     public static function description(): string
     {
-        return 'A quotation, with who said it.';
+        return __('page-builder::blocks.quote.description');
     }
 
     public static function view(): string
@@ -73,8 +73,8 @@ class QuoteBlock implements InlineEditable, PageBlock
     public static function schema(): array
     {
         return [
-            Textarea::make('text')->label('Quotation')->rows(4),
-            TextInput::make('cite')->label('Attribution')->maxLength(255),
+            Textarea::make('text')->label(__('page-builder::blocks.quote.text'))->rows(4),
+            TextInput::make('cite')->label(__('page-builder::blocks.quote.cite'))->maxLength(255),
         ];
     }
 }

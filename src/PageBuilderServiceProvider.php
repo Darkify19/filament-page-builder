@@ -28,8 +28,19 @@ class PageBuilderServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'page-builder');
 
+        // A published copy at lang/vendor/page-builder takes precedence over these files
+        // key by key, which is how an application corrects one sentence without forking the
+        // whole set — see `FileLoader::loadNamespaceOverrides()`, which merges recursively.
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'page-builder');
+
         $this->registerDirectives();
         $this->registerAssets();
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../resources/lang' => $this->app->langPath('vendor/page-builder'),
+            ], 'page-builder-translations');
+        }
     }
 
     /**

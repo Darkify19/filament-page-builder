@@ -28,6 +28,35 @@ class SectionBlock implements Container, PageBlock
         'xl' => 'Extra large',
     ];
 
+    /**
+     * GAPS, translated, plus the column alignment options that had no constant to hang on.
+     *
+     * @return array<string, string>
+     */
+    public static function gaps(): array
+    {
+        return [
+            'none' => __('page-builder::blocks.common.none'),
+            'sm' => __('page-builder::blocks.common.small'),
+            'md' => __('page-builder::blocks.common.medium'),
+            'lg' => __('page-builder::blocks.common.large'),
+            'xl' => __('page-builder::blocks.common.extra_large'),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function verticalAlignment(): array
+    {
+        return [
+            'start' => __('page-builder::blocks.section.top'),
+            'center' => __('page-builder::blocks.section.middle'),
+            'end' => __('page-builder::blocks.section.bottom'),
+            'stretch' => __('page-builder::blocks.section.same_height'),
+        ];
+    }
+
     public static function type(): string
     {
         return 'section';
@@ -35,7 +64,7 @@ class SectionBlock implements Container, PageBlock
 
     public static function label(): string
     {
-        return 'Section';
+        return __('page-builder::blocks.section.label');
     }
 
     public static function icon(): ?string
@@ -90,7 +119,7 @@ class SectionBlock implements Container, PageBlock
 
     public static function description(): string
     {
-        return 'A row of columns. Drop other blocks into a column.';
+        return __('page-builder::blocks.section.description');
     }
 
     /**
@@ -103,7 +132,7 @@ class SectionBlock implements Container, PageBlock
         $columns = max(1, min(4, $columns));
 
         return match ($columns) {
-            1 => ['1' => 'Full'],
+            1 => ['1' => __('page-builder::blocks.section.full')],
             2 => ['1-1' => '1 / 1', '1-2' => '1 / 2', '2-1' => '2 / 1'],
             3 => ['1-1-1' => '1 / 1 / 1', '1-2-1' => '1 / 2 / 1'],
             4 => ['1-1-1-1' => '1 / 1 / 1 / 1'],
@@ -181,12 +210,12 @@ class SectionBlock implements Container, PageBlock
     {
         return [
             Select::make('columns')
-                ->label('Columns')
+                ->label(__('page-builder::blocks.section.columns'))
                 ->options([
-                    1 => 'One',
-                    2 => 'Two',
-                    3 => 'Three',
-                    4 => 'Four',
+                    1 => __('page-builder::blocks.section.one'),
+                    2 => __('page-builder::blocks.section.two'),
+                    3 => __('page-builder::blocks.section.three'),
+                    4 => __('page-builder::blocks.section.four'),
                 ])
                 ->default(2)
                 ->live()
@@ -194,15 +223,17 @@ class SectionBlock implements Container, PageBlock
                     $set('ratio', self::ratioFor((int) $state, null));
                 }),
             Select::make('ratio')
-                ->label('Column layout')
-                ->helperText('Or drag the edge between two columns on the page.')
+                ->label(__('page-builder::blocks.section.ratio'))
+                ->helperText(__('page-builder::blocks.section.ratio_hint'))
                 ->options(function (callable $get): array {
                     $columns = (int) ($get('columns') ?? 2);
                     $options = self::ratiosFor($columns);
                     $ratio = $get('ratio');
 
                     if (self::isCustomRatio($columns, $ratio)) {
-                        $options[$ratio] = 'Custom ('.implode(' / ', self::percentagesFor($columns, $ratio)).'%)';
+                        $options[$ratio] = __('page-builder::blocks.section.custom_ratio', [
+                            'percent' => implode(' / ', self::percentagesFor($columns, $ratio)).'%',
+                        ]);
                     }
 
                     return $options;
@@ -210,26 +241,21 @@ class SectionBlock implements Container, PageBlock
                 ->default('1-1'),
             Grid::make(2)->schema([
                 Select::make('gap')
-                    ->label('Space between')
-                    ->options(self::GAPS)
-                    ->placeholder('Medium'),
+                    ->label(__('page-builder::blocks.section.gap'))
+                    ->options(self::gaps())
+                    ->placeholder(__('page-builder::blocks.common.medium')),
                 Select::make('valign')
-                    ->label('Line up columns')
-                    ->options([
-                        'start' => 'Top',
-                        'center' => 'Middle',
-                        'end' => 'Bottom',
-                        'stretch' => 'Same height',
-                    ])
-                    ->placeholder('Top'),
+                    ->label(__('page-builder::blocks.section.valign'))
+                    ->options(self::verticalAlignment())
+                    ->placeholder(__('page-builder::blocks.section.top')),
             ]),
             Select::make('stack')
-                ->label('Stack the columns')
+                ->label(__('page-builder::blocks.section.stack'))
                 ->options([
-                    'tablet' => 'On tablets and phones',
-                    'never' => 'Never',
+                    'tablet' => __('page-builder::blocks.section.stack_tablet'),
+                    'never' => __('page-builder::blocks.section.stack_never'),
                 ])
-                ->placeholder('On phones'),
+                ->placeholder(__('page-builder::blocks.section.stack_tablet')),
         ];
     }
 }
