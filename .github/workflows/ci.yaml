@@ -11,8 +11,25 @@ on:
 
 jobs:
   quality:
-    name: Lint and static checks
+    name: Tests (Filament ${{ matrix.filament }})
     runs-on: ubuntu-latest
+
+    # The floor, the newest 4.x and the newest 5.x. Filament 4 runs on Livewire 3 and
+    # Filament 5 on Livewire 4, so each row pins its own pair. Below 4.6 the page's
+    # nullable getHeading() and ToggleButtons::tooltips() do not exist.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - filament: '4.6.*'
+            livewire: '^3.6'
+            testbench: '^10.0'
+          - filament: '^4.6'
+            livewire: '^3.6'
+            testbench: '^10.0'
+          - filament: '^5.0'
+            livewire: '^4.0'
+            testbench: '^11.0'
 
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +44,12 @@ jobs:
         run: composer validate --strict --no-check-lock
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: |
+          composer require --no-update --no-interaction "filament/filament:${{ matrix.filament }}"
+          composer require --dev --no-update --no-interaction \
+            "livewire/livewire:${{ matrix.livewire }}" \
+            "orchestra/testbench:${{ matrix.testbench }}"
+          composer update --prefer-dist --no-interaction --no-progress --with-all-dependencies
 
       - name: Lint PHP syntax
         run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
