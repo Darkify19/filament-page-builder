@@ -22,5 +22,5 @@
         @endif
     </figure>
 @else
-    <div class="fpb-image-placeholder">Choose an image in the sidebar</div>
+    <div class="fpb-image-placeholder">{{ __('page-builder::blocks.image.canvas_placeholder') }}</div>
 @endif

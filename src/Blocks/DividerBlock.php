@@ -13,7 +13,7 @@ class DividerBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'Divider';
+        return __('page-builder::blocks.divider.label');
     }
 
     public static function icon(): ?string
@@ -28,7 +28,7 @@ class DividerBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'A horizontal rule.';
+        return __('page-builder::blocks.divider.description');
     }
 
     public static function view(): string

@@ -108,7 +108,7 @@ abstract class DesignPage extends Page
             $this->savedBlocks = [];
 
             Notification::make()
-                ->title('Repaired duplicate block ids. Save to keep both copies.')
+                ->title(__('page-builder::chrome.duplicate_ids_repaired'))
                 ->warning()
                 ->send();
 
@@ -120,7 +120,7 @@ abstract class DesignPage extends Page
 
     public function getTitle(): string
     {
-        return 'Design: '.$this->getRecordTitle();
+        return __('page-builder::chrome.design_title', ['title' => $this->getRecordTitle()]);
     }
 
     /**
@@ -184,7 +184,26 @@ abstract class DesignPage extends Page
 
     public function exitLabel(): string
     {
-        return 'Back to '.static::getResource()::getBreadcrumb();
+        return __('page-builder::chrome.back_to', ['resource' => static::getResource()::getBreadcrumb()]);
+    }
+
+    /**
+     * Every string `page-builder.js` needs, resolved once per request.
+     *
+     * The canvas ships as plain ES2020 with no bundler and no import map, so the only way
+     * for it to speak the editor's language is for the server to hand the translations
+     * over. The whole `js` group goes across rather than a hand-picked subset: a key the
+     * view forgot to pass is English on a screen nobody asked for it on, whereas a key it
+     * does not use yet costs a few hundred bytes.
+     *
+     * @return array<string, string>
+     */
+    public function canvasStrings(): array
+    {
+        return array_map(
+            fn (mixed $value): string => (string) $value,
+            __('page-builder::js'),
+        );
     }
 
     protected function authorizeAccess(): void
@@ -321,19 +340,22 @@ abstract class DesignPage extends Page
     }
 
     /**
-     * Palette items grouped by category: Layout, Content, Design, then the rest.
+     * Palette items grouped by category: Layout, Content, Media, Design, then the rest.
+     *
+     * A category an application invents falls back to its own name, since a key nothing
+     * translates would come back as `marketing` on the palette and read as a bug.
      *
      * @return array<string, array{label: string, items: array<int, array{type: string, label: string, icon: ?string, category: string, description: ?string}>}>
      */
     public function getPaletteGroupsProperty(): array
     {
         $labels = [
-            'layout' => 'Layout',
-            'content' => 'Content',
-            'media' => 'Media',
-            'design' => 'Design',
-            'developer' => 'Developer',
-            'blocks' => 'Blocks',
+            'layout' => __('page-builder::chrome.layout'),
+            'content' => __('page-builder::chrome.content'),
+            'media' => __('page-builder::chrome.media'),
+            'design' => __('page-builder::chrome.design'),
+            'developer' => __('page-builder::chrome.developer'),
+            'blocks' => __('page-builder::chrome.blocks'),
         ];
 
         $groups = [];
@@ -1154,7 +1176,7 @@ abstract class DesignPage extends Page
         if ($this->loadedUpdatedAt !== null
             && optional($record->updated_at)->toJSON() !== $this->loadedUpdatedAt) {
             Notification::make()
-                ->title('This page was saved elsewhere. Reload to avoid overwriting those changes.')
+                ->title(__('page-builder::chrome.saved_elsewhere'))
                 ->danger()
                 ->send();
 
@@ -1168,7 +1190,7 @@ abstract class DesignPage extends Page
         $this->markSaved();
 
         Notification::make()
-            ->title('Layout saved')
+            ->title(__('page-builder::chrome.layout_saved'))
             ->success()
             ->send();
     }

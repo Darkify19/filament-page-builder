@@ -24,7 +24,7 @@
         ></iframe>
     </div>
     @if ($editing && ($data['autoplay'] ?? false))
-        <p class="fpb-embed-note">Autoplay is paused while you edit. It plays on the published page.</p>
+        <p class="fpb-embed-note">{{ __('page-builder::blocks.embed.canvas_autoplay_note') }}</p>
     @endif
 @elseif ($editing && filled($data['url'] ?? null))
     <div class="fpb-embed-placeholder">{{ EmbedUrl::problem($data['url']) }}</div>

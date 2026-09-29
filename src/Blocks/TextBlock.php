@@ -18,7 +18,7 @@ class TextBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'body' => Editable::text()->multiline()->placeholder('Write something'),
+            'body' => Editable::text()->multiline()->placeholder(__('page-builder::blocks.text.placeholder')),
         ];
     }
 
@@ -29,7 +29,7 @@ class TextBlock implements InlineEditable, PageBlock
 
     public static function label(): string
     {
-        return 'Text';
+        return __('page-builder::blocks.text.label');
     }
 
     public static function icon(): ?string
@@ -44,7 +44,7 @@ class TextBlock implements InlineEditable, PageBlock
 
     public static function description(): string
     {
-        return 'A paragraph you can type into on the page.';
+        return __('page-builder::blocks.text.description');
     }
 
     public static function view(): string

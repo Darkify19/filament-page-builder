@@ -159,6 +159,14 @@ document.addEventListener('alpine:init', () => {
 
         /* ── Motion bookkeeping (not reactive state the template reads) ─── */
 
+        /**
+         * Translations for this locale, read from `data-fpb-i18n` in init().
+         *
+         * Deliberately not reactive: nothing re-renders it, and a locale change is a full
+         * page load. Reactivity here would only cost a diff on every notice.
+         */
+        strings: {},
+
         /** Block ids already on the canvas, so a re-render can tell new from moved. */
         seen: null,
         /** id → bounding box, taken just before a change, for the FLIP afterwards. */
@@ -173,6 +181,12 @@ document.addEventListener('alpine:init', () => {
         landing: null,
 
         init() {
+            // Translations arrive on the root element from `DesignPage::canvasStrings()`.
+            // There is no bundler and no import map here, so this attribute is the whole
+            // i18n layer — a key read straight out of the source instead of through `t()`
+            // would stay English in every locale but English.
+            this.strings = this.readStrings();
+
             this.bind(window, 'beforeunload', (event) => this.guardUnload(event));
             this.bind(document, 'keydown', (event) => this.onKeydown(event));
 
@@ -211,6 +225,45 @@ document.addEventListener('alpine:init', () => {
 
             this.$watch('preview', () => setTimeout(() => this.refreshOverlay(), 230));
             this.$watch('wideInspector', () => setTimeout(() => this.refreshOverlay(), 60));
+        },
+
+        /**
+         * Parse the translations the server put on the root element.
+         *
+         * Falls back to an empty object rather than throwing: a malformed payload should
+         * cost one untranslated label, not take the whole canvas down with it. `t()` then
+         * shows the key, which is obvious enough to notice in a screenshot.
+         */
+        readStrings() {
+            const raw = this.$root?.dataset?.fpbI18n;
+
+            if (!raw) {
+                return {};
+            }
+
+            try {
+                const parsed = JSON.parse(raw);
+
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        },
+
+        /**
+         * A translated string from the `js` group, with `:name` replaced.
+         *
+         * Returns the key when the locale is missing it. That is deliberately visible:
+         * a page-builder.strings.confirm_delete in the middle of a confirm dialog is a bug
+         * report, where a blank or a silent English fallback would be a slow one.
+         */
+        t(key, replace = {}) {
+            const value = this.strings?.[key] ?? `page-builder.js.${key}`;
+
+            return Object.entries(replace).reduce(
+                (text, [name, replacement]) => text.replaceAll(`:${name}`, String(replacement)),
+                value,
+            );
         },
 
         /**
@@ -552,7 +605,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            if (!window.confirm('This page has unsaved changes. Leave without saving?')) {
+            if (!window.confirm(this.t('confirm_unsaved'))) {
                 event.preventDefault();
             }
         },
@@ -805,7 +858,7 @@ document.addEventListener('alpine:init', () => {
          * out and everything below it jumping.
          */
         remove(id, hasContent) {
-            if (hasContent && !window.confirm('Delete this block? Its content goes with it.')) {
+            if (hasContent && !window.confirm(this.t('confirm_delete'))) {
                 return;
             }
 
@@ -1133,7 +1186,7 @@ document.addEventListener('alpine:init', () => {
 
             const left = well.left + inset;
             const width = Math.max(24, well.width - inset * 2);
-            const label = `${this.mode === 'move' ? 'Move' : 'Add'} here · ${this.placeName(container)}`;
+            const label = `${this.mode === 'move' ? this.t('move_here') : this.t('add_here')} · ${this.placeName(container)}`;
             const key = [kind, Math.round(left), Math.round(top), Math.round(width), Math.round(height), label].join('|');
 
             if (key === this.indicatorKey) {
@@ -1178,12 +1231,12 @@ document.addEventListener('alpine:init', () => {
         /** "page", or "column 2" — what the indicator says it is dropping into. */
         placeName(container) {
             if (!container.classList.contains('fpb-slot')) {
-                return 'page';
+                return this.t('place_page');
             }
 
             const match = /(\d+)$/.exec(container.dataset.fpbSlot ?? '');
 
-            return match ? `column ${Number(match[1]) + 1}` : 'column';
+            return match ? this.t('place_column_n', { number: Number(match[1]) + 1 }) : this.t('place_column');
         },
 
         /* ── Editor decoration: column handles and readouts ── */
@@ -1260,7 +1313,7 @@ document.addEventListener('alpine:init', () => {
                 const handle = document.createElement('div');
 
                 handle.className = 'fpb-col-handle';
-                handle.title = 'Drag to resize the columns';
+                handle.title = this.t('drag_resize_columns');
                 this.placeColumnHandle(handle, boxes[i], boxes[i + 1]);
                 handle.addEventListener('pointerdown', (event) => this.startColumnResize(event, block.dataset.id, section, i));
                 overlay.appendChild(handle);
@@ -1359,7 +1412,10 @@ document.addEventListener('alpine:init', () => {
                 resize.value = percent;
                 resize.block.style.width = percent === 100 ? '' : `${percent}%`;
 
-                return this.showTip(percent === 100 ? 'Full width' : `${percent}% wide`, event);
+                return this.showTip(
+                    percent === 100 ? this.t('full_width') : this.t('percent_wide', { percent }),
+                    event,
+                );
             }
 
             const height = Math.max(resize.spacer ? 4 : 0, Math.min(4000, Math.round((resize.startHeight + (event.clientY - resize.startY)) / 4) * 4));
@@ -1372,7 +1428,7 @@ document.addEventListener('alpine:init', () => {
                 resize.body.style.minHeight = `${height}px`;
             }
 
-            this.showTip(`${height}px tall`, event);
+            this.showTip(this.t('pixels_tall', { height }), event);
         },
 
         endResize() {
@@ -1653,7 +1709,7 @@ document.addEventListener('alpine:init', () => {
                 this.styleClipboard = look;
                 this.stash('fpb.style-clipboard', JSON.stringify(look));
                 motion.flash(el);
-                this.say('Style copied. Right-click another block → Paste style.');
+                this.say(this.t('notice_style_copied'));
             }));
         },
 
@@ -1741,7 +1797,7 @@ document.addEventListener('alpine:init', () => {
             }
 
             motion.flash(this.blockEl(id));
-            this.say(`Copied. Paste with ${this.keys('V')}, here or on another page.`);
+            this.say(this.t('notice_copied', { keys: this.keys('V') }));
         },
 
         onPaste(event) {

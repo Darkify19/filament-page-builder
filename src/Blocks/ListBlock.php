@@ -21,6 +21,25 @@ class ListBlock implements PageBlock
         'none' => 'None',
     ];
 
+    /**
+     * MARKERS, translated.
+     *
+     * The constant stays English because a constant cannot call `__()`, and it is public
+     * API — something may read the keys, or a test may assert on them. Anything that
+     * *shows* the options to an editor goes through here instead.
+     *
+     * @return array<string, string>
+     */
+    public static function markers(): array
+    {
+        return [
+            'bullet' => __('page-builder::blocks.list.bullets'),
+            'number' => __('page-builder::blocks.list.numbers'),
+            'check' => __('page-builder::blocks.list.ticks'),
+            'none' => __('page-builder::blocks.common.none'),
+        ];
+    }
+
     public static function type(): string
     {
         return 'list';
@@ -28,7 +47,7 @@ class ListBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'List';
+        return __('page-builder::blocks.list.label');
     }
 
     public static function icon(): ?string
@@ -43,7 +62,7 @@ class ListBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'Bulleted or numbered points, one per line.';
+        return __('page-builder::blocks.list.description');
     }
 
     public static function view(): string
@@ -96,12 +115,12 @@ class ListBlock implements PageBlock
     {
         return [
             Textarea::make('items')
-                ->label('Items')
+                ->label(__('page-builder::blocks.list.items'))
                 ->rows(6)
-                ->helperText('One item per line.'),
+                ->helperText(__('page-builder::blocks.list.items_hint')),
             ToggleButtons::make('marker')
-                ->label('Marker')
-                ->options(self::MARKERS)
+                ->label(__('page-builder::blocks.list.marker'))
+                ->options(self::markers())
                 ->default('bullet')
                 ->inline()
                 ->grouped(),
