@@ -3,8 +3,11 @@ name: CI
 on:
   push:
     branches: [main, dev]
+  # Pull requests target dev. The bot's dev-to-main promotion PR merges within seconds,
+  # and every run for it failed as a "workflow file issue" before a job started. The
+  # push to dev has already run the suite on the same commits.
   pull_request:
-    branches: [main]
+    branches: [dev]
 
 jobs:
   quality:
