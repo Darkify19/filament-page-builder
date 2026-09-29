@@ -2,23 +2,30 @@
 
 @php
     use CarlJanzell\FilamentPageBuilder\PageBuilder;
+    use CarlJanzell\FilamentPageBuilder\Support\BlockStyle;
     use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 
     $settings = is_array($block['settings'] ?? null) ? $block['settings'] : [];
     $anchor = BlockTree::isValidAnchor($block['anchor'] ?? null) ? $block['anchor'] : null;
     $label = $block['label'] ?? $block['type'];
+    $style = BlockStyle::compile(is_array($block['style'] ?? null) ? $block['style'] : []);
+    $selected = $selectedId === $block['id'];
+    $align = is_array($block['style'] ?? null) ? ($block['style']['text_align'] ?? null) : null;
 @endphp
 
 <div
     class="fpb-block"
     data-id="{{ $block['id'] }}"
+    data-type="{{ $block['type'] }}"
     data-parent="{{ $block['parent'] ?? '' }}"
     data-slot="{{ $block['slot'] ?? '' }}"
     data-has-content="{{ $block['hasContent'] ? 'true' : 'false' }}"
     @if ($anchor) id="{{ $anchor }}" @endif
     @if ($block['isContainer'] ?? false) data-container="true" @endif
-    @if ($selectedId === $block['id']) data-selected="true" @endif
+    @if ($selected) data-selected="true" @endif
     @unless ($block['isKnown']) data-unknown="true" @endunless
+    @if ($style['sized']) data-fpb-sized="height" @endif
+    @if ($style['outer'] !== '') style="{{ $style['outer'] }}" @endif
     @foreach ($settings as $token => $value)
         @if (is_string($token) && preg_match('/^[a-z-]+$/', $token) && is_string($value))
             data-fpb-{{ $token }}="{{ $value }}"
@@ -39,6 +46,20 @@
             x-on:click.stop
         >&#8942;&#8942;</button>
         <span class="fpb-block-label">{{ $label }}</span>
+        @if ($selected && $block['isKnown'] && ($block['isEditable'] ?? true))
+            <span class="fpb-block-quick" role="group" aria-label="Align text">
+                @foreach (['left' => 'heroicon-m-bars-3-bottom-left', 'center' => 'heroicon-m-bars-3', 'right' => 'heroicon-m-bars-3-bottom-right', 'justify' => 'heroicon-m-bars-4'] as $side => $icon)
+                    <button
+                        type="button"
+                        title="Align {{ $side }}"
+                        aria-label="Align {{ $side }}"
+                        aria-pressed="{{ $align === $side ? 'true' : 'false' }}"
+                        @if ($align === $side) data-active="true" @endif
+                        wire:click.stop="setBlockStyle('{{ $block['id'] }}', 'text_align', '{{ $align === $side ? '' : $side }}')"
+                    ><x-filament::icon :icon="$icon" class="fpb-quick-icon" /></button>
+                @endforeach
+            </span>
+        @endif
         <span class="fpb-block-tools">
             <button
                 type="button"
@@ -69,12 +90,18 @@
             >Edit</button>
             <button type="button" title="Duplicate" aria-label="Duplicate {{ $label }}"
                     wire:click.stop="duplicateBlock('{{ $block['id'] }}')">&#10697;</button>
+            <button type="button" class="fpb-block-more" title="More actions (right-click)" aria-label="More actions for {{ $label }}"
+                    x-on:click.stop="openMenu($event, '{{ $block['id'] }}')">&#8943;</button>
             <button type="button" title="Delete" aria-label="Delete {{ $label }}"
                     x-on:click.stop="remove('{{ $block['id'] }}', {{ $block['hasContent'] ? 'true' : 'false' }})">&#10005;</button>
         </span>
     </div>
 
-    <div class="fpb-block-body">
+    <div
+        class="fpb-block-body{{ $style['class'] ? ' '.$style['class'] : '' }}"
+        @if ($style['inner'] !== '') style="{{ $style['inner'] }}" @endif
+    >
+        @include('page-builder::components.background', ['layer' => $style['background']])
         @if ($block['isKnown'] && $block['view'])
             @php
                 PageBuilder::editing($block['id'], $block['type'], $block['data'] ?? []);
@@ -108,4 +135,23 @@
             </p>
         @endif
     </div>
+
+    @if ($selected && $block['isKnown'])
+        <span
+            class="fpb-resize fpb-resize-x"
+            title="Drag to change the width. Double-click to reset."
+            aria-hidden="true"
+            x-on:pointerdown.stop.prevent="startResize($event, '{{ $block['id'] }}', 'width')"
+            x-on:dblclick.stop="resetSize('{{ $block['id'] }}', 'width')"
+            x-on:click.stop
+        ></span>
+        <span
+            class="fpb-resize fpb-resize-y"
+            title="Drag to change the height. Double-click to reset."
+            aria-hidden="true"
+            x-on:pointerdown.stop.prevent="startResize($event, '{{ $block['id'] }}', 'height')"
+            x-on:dblclick.stop="resetSize('{{ $block['id'] }}', 'height')"
+            x-on:click.stop
+        ></span>
+    @endif
 </div>

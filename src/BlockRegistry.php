@@ -19,6 +19,15 @@ class BlockRegistry
      */
     protected array $blocks = [];
 
+    protected ?Shortcodes $shortcodes = null;
+
+    /**
+     * Hosts the application allows embeds from, on top of the shipped list.
+     *
+     * @var array<int, string>
+     */
+    protected array $embedHosts = [];
+
     /**
      * @param  array<int, class-string<PageBlock>>  $blocks
      */
@@ -180,5 +189,62 @@ class BlockRegistry
         }
 
         return null;
+    }
+
+    /**
+     * The shortcodes this panel's pages may call.
+     *
+     * Kept per registry, like the blocks themselves, so the public site resolves the same
+     * set the canvas offered: both reach this through the current-or-default panel.
+     */
+    public function shortcodes(): Shortcodes
+    {
+        return $this->shortcodes ??= new Shortcodes;
+    }
+
+    /**
+     * @param  array<int, string>  $hosts
+     */
+    public function allowEmbedHosts(array $hosts): static
+    {
+        foreach ($hosts as $host) {
+            if (is_string($host) && preg_match('/^[a-z0-9.-]+$/i', $host)) {
+                $this->embedHosts[] = strtolower($host);
+            }
+        }
+
+        $this->embedHosts = array_values(array_unique($this->embedHosts));
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function embedHosts(): array
+    {
+        return $this->embedHosts;
+    }
+
+    /**
+     * Where a block's resize handle writes, per axis, when it is not the style layer.
+     *
+     * By default the width handle sets the block's width and the height handle its
+     * minimum height. A block whose size *is* its content — a spacer — maps an axis onto
+     * one of its own data fields instead, through an optional static `resizable()`.
+     *
+     * @return array<string, string>
+     */
+    public function resizable(?string $type): array
+    {
+        $block = $this->find($type);
+
+        if ($block !== null && method_exists($block, 'resizable')) {
+            $map = $block::resizable();
+
+            return is_array($map) ? array_filter($map, 'is_string') : [];
+        }
+
+        return [];
     }
 }

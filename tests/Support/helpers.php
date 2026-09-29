@@ -27,3 +27,14 @@ function ids(Testable $canvas): array
 {
     return array_column($canvas->get('blocks'), 'id');
 }
+
+/**
+ * Form state without the empty values Filament fills every untouched field with.
+ *
+ * @param  array<string, mixed>  $state
+ * @return array<string, mixed>
+ */
+function filled_state(array $state): array
+{
+    return array_filter($state, fn (mixed $value): bool => $value !== null && $value !== false && $value !== []);
+}

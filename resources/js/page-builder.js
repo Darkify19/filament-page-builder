@@ -8,7 +8,13 @@
  *
  * Drop targets are slots (columns) and the root canvas. The pointer resolves to the
  * nearest valid well, so a block can land beside its siblings or inside a section.
- * Reordering is committed to Livewire in a single call per drop.
+ * Reordering is committed to Livewire in a single call per drop. Where the block will
+ * land is drawn on an overlay beside the canvas rather than inserted into it, so showing
+ * the spot can never move the page it is pointing at.
+ *
+ * Also here: the right-click menu, copy and paste (through the system clipboard and a
+ * local buffer), dragging a block's edges or a section's column edges to resize, and the
+ * Preview frame.
  *
  * Motion is Anime.js, vendored beside this file. It is deliberately optional: every
  * animation goes through `motion`, which no-ops when the library is absent or when the
@@ -25,7 +31,7 @@
  */
 const motion = {
     /** Durations in ms, kept together so the whole editor stays on one rhythm. */
-    duration: { flash: 620, enter: 420, exit: 200, move: 380, marker: 160 },
+    duration: { flash: 620, enter: 420, exit: 200, move: 380 },
 
     get anime() {
         return typeof window.anime === 'function' ? window.anime : null;
@@ -114,13 +120,35 @@ document.addEventListener('alpine:init', () => {
         /** 'move' while dragging an existing block, 'insert' from the palette, null otherwise. */
         mode: null,
         payload: null,
-        marker: null,
         target: null,
         teardown: [],
         sideTab: 'blocks',
         inspectorTab: 'content',
         preview: 'desktop',
         paletteQuery: '',
+        /** The inline field the caret is in, named for the breadcrumb. */
+        editingField: null,
+        /** The inspector at double width, for code and long forms. */
+        wideInspector: false,
+
+        /** The right-click menu: where it is and what it was opened on. */
+        menu: { open: false, x: 0, y: 0, id: null, label: '', parent: false, container: false },
+        /** A copied block (clipboard JSON) and a copied look, kept in this browser too. */
+        clipboard: null,
+        styleClipboard: null,
+
+        previewing: false,
+        previewLoading: false,
+        previewDevice: 'desktop',
+
+        /** A drag of a block edge or a column edge in progress. */
+        resizing: null,
+        /** A short confirmation shown beside the save status ("Copied"). */
+        notice: null,
+        noticeTimer: null,
+        indicatorKey: null,
+        overlayQueued: false,
+        sizeObserver: null,
         isMac: typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform),
         /**
          * Below 1280px the three columns cannot sit together. One workspace at a
@@ -164,10 +192,25 @@ document.addEventListener('alpine:init', () => {
             // can be animated without every one of them having to say so.
             this.bind(this.$root, 'pointerdown', () => this.captureRects(), true);
 
+            // Copy and paste of whole blocks. Only when nothing is being typed: inside a
+            // field these are the browser's own, and must stay that way.
+            this.bind(document, 'paste', (event) => this.onPaste(event));
+
+            this.bind(window, 'resize', () => {
+                this.closeMenu();
+                this.refreshOverlay();
+            });
+            this.bind(this.frame() ?? window, 'scroll', () => this.closeMenu(), true);
+
+            this.restoreClipboard();
             this.watchNarrow();
 
             this.seen = new Set(this.order());
             this.watchCanvas();
+            this.watchSize();
+
+            this.$watch('preview', () => setTimeout(() => this.refreshOverlay(), 230));
+            this.$watch('wideInspector', () => setTimeout(() => this.refreshOverlay(), 60));
         },
 
         /**
@@ -181,7 +224,10 @@ document.addEventListener('alpine:init', () => {
             this.teardown = [];
             this.observer?.disconnect();
             this.observer = null;
+            this.sizeObserver?.disconnect();
+            this.sizeObserver = null;
             this.stopAutoscroll();
+            this.stopResize();
         },
 
         /**
@@ -289,21 +335,16 @@ document.addEventListener('alpine:init', () => {
         /**
          * Whether a mutation is just the editor's own decoration.
          *
-         * The drop marker moves on every pointer move during a drag and the flash ring
-         * comes and goes on its own; both land in the canvas and would otherwise read as
-         * the page having changed — which, with the marker being 3px tall, had every
-         * block on the page twitching as the cursor went by.
+         * The flash ring comes and goes on its own inside a block, and would otherwise
+         * read as the page having changed. (The drop indicator and the column handles live
+         * on the overlay, outside the canvas, so they never reach the observer at all.)
          */
         isOwnChrome(record) {
             const nodes = [...record.addedNodes, ...record.removedNodes];
 
             return (
                 nodes.length > 0 &&
-                nodes.every(
-                    (node) =>
-                        node instanceof HTMLElement &&
-                        (node.classList.contains('fpb-drop-marker') || node.classList.contains('fpb-flash'))
-                )
+                nodes.every((node) => node instanceof HTMLElement && node.classList.contains('fpb-flash'))
             );
         },
 
@@ -352,6 +393,7 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.seen = new Set(blocks.map((el) => el.dataset.id));
+            this.refreshOverlay();
         },
 
         /** A block that was not on the page a moment ago. */
@@ -558,6 +600,18 @@ document.addEventListener('alpine:init', () => {
         onKeydown(event) {
             const chord = event.metaKey || event.ctrlKey;
 
+            if (event.key === 'Escape' && this.previewing) {
+                event.preventDefault();
+
+                return this.closePreview();
+            }
+
+            if (event.key === 'Escape' && this.menu.open) {
+                event.preventDefault();
+
+                return this.closeMenu();
+            }
+
             if (chord && event.key.toLowerCase() === 's') {
                 event.preventDefault();
                 this.flushActiveEditable();
@@ -565,8 +619,14 @@ document.addEventListener('alpine:init', () => {
                 return this.$wire.save();
             }
 
-            if (this.isTyping(event)) {
+            if (this.previewing || this.isTyping(event)) {
                 return;
+            }
+
+            if (chord && event.key.toLowerCase() === 'c' && this.$wire.selectedId && !this.hasTextSelection()) {
+                event.preventDefault();
+
+                return this.copyBlock(this.$wire.selectedId);
             }
 
             if (chord && event.key.toLowerCase() === 'z') {
@@ -673,11 +733,16 @@ document.addEventListener('alpine:init', () => {
 
             // Remember what was there, so Escape has something to go back to.
             el.dataset.fpbOriginal = el.innerText;
+            this.editingField = this.humanise(el.dataset.fpbField);
 
             // Typing in a block is a way of choosing it. The inspector is a second view
-            // of the same fields and should follow the caret.
+            // of the same fields and should follow the caret — and show which of them
+            // this element is, so clicking a button inside a block says "you are editing
+            // the button" rather than leaving the editor to hunt for it.
             if (this.$wire.selectedId !== el.dataset.fpbBlock) {
-                this.$wire.selectBlock(el.dataset.fpbBlock);
+                this.$wire.selectBlock(el.dataset.fpbBlock).then(() => this.revealField(el.dataset.fpbField));
+            } else {
+                this.revealField(el.dataset.fpbField);
             }
         },
 
@@ -699,6 +764,7 @@ document.addEventListener('alpine:init', () => {
             const original = el.dataset.fpbOriginal;
 
             delete el.dataset.fpbOriginal;
+            this.editingField = null;
 
             if (value === original) {
                 return;
@@ -762,6 +828,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         startMove(event, id) {
+            this.closeMenu();
+            this.clearColumnHandles();
             this.mode = 'move';
             this.payload = id;
             event.dataTransfer.effectAllowed = 'move';
@@ -778,6 +846,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         startInsert(event, type) {
+            this.closeMenu();
+            this.clearColumnHandles();
             this.mode = 'insert';
             this.payload = type;
             event.dataTransfer.effectAllowed = 'copy';
@@ -807,13 +877,15 @@ document.addEventListener('alpine:init', () => {
             this.mode = null;
             this.payload = null;
             this.target = null;
-            this.removeMarker();
+            this.hideIndicator();
             this.clearSlotHighlight();
             this.stopAutoscroll();
 
             this.$root.querySelectorAll('.fpb-block[data-dragging]').forEach((el) => {
                 delete el.dataset.dragging;
             });
+
+            this.refreshOverlay();
         },
 
         canvas() {
@@ -940,13 +1012,13 @@ document.addEventListener('alpine:init', () => {
 
             this.target = next;
             this.highlightSlot(next?.container);
-            this.showMarker(next);
+            this.showIndicator(next);
             this.autoscroll(event);
         },
 
         onDragLeave(event) {
             if (!this.$root.contains(event.relatedTarget)) {
-                this.removeMarker();
+                this.hideIndicator();
                 this.clearSlotHighlight();
             }
         },
@@ -974,11 +1046,15 @@ document.addEventListener('alpine:init', () => {
                 this.landing = payload;
                 this.$wire.moveBlock(payload, next.index, next.parent, next.slot);
             } else {
-                this.$wire.insertBlock(payload, next.index, next.parent, next.slot);
+                this.$wire.insertBlock(payload, next.index, next.parent, next.slot).then((id) => this.focusEditable(id));
             }
         },
 
         highlightSlot(container) {
+            if (container && container.dataset.dropActive === 'true') {
+                return;
+            }
+
             this.clearSlotHighlight();
 
             if (container && container.classList.contains('fpb-slot')) {
@@ -992,41 +1068,757 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
-        showMarker(target) {
-            this.removeMarker();
+        /* ── Where a drop will land ─────────────────────── */
 
-            if (!target || !target.container) {
+        frame() {
+            return this.$root.querySelector('.fpb-canvas-frame');
+        },
+
+        /**
+         * An element's box in overlay coordinates.
+         *
+         * The overlay lives inside the scrolling frame, so its origin is the frame's
+         * content, not the viewport: a box measured this way scrolls with the page and
+         * never needs re-measuring because the reader scrolled.
+         */
+        overlayBox(el) {
+            const frame = this.frame();
+            const outer = frame.getBoundingClientRect();
+            const box = el.getBoundingClientRect();
+            const left = box.left - outer.left + frame.scrollLeft;
+            const top = box.top - outer.top + frame.scrollTop;
+
+            return { left, top, width: box.width, height: box.height, right: left + box.width, bottom: top + box.height };
+        },
+
+        /**
+         * Draw "it goes here" for a drop target.
+         *
+         * The old marker was a 3px element inserted into the page between two blocks.
+         * Inserting it pushed everything below down by 3px, which moved the midpoints the
+         * pointer is measured against, which moved the marker back — so it flickered
+         * between two places on every pointer move, and each move restarted its entrance
+         * animation. The indicator is now drawn on an overlay that takes no space, is only
+         * touched when the target really changes, and glides between positions.
+         */
+        showIndicator(target) {
+            const indicator = this.$refs.indicator;
+
+            if (!indicator || !target || !target.container || !this.frame()) {
+                return this.hideIndicator();
+            }
+
+            const container = target.container;
+            const all = this.directBlocks(container);
+            const others = all.filter((el) => !(this.mode === 'move' && el.dataset.id === this.payload));
+            const well = this.overlayBox(container);
+            const inset = container.classList.contains('fpb-slot') ? 6 : 14;
+            let kind = 'line';
+            let top = well.top;
+            let height = 4;
+
+            if (others.length === 0) {
+                // An empty column: light up the whole well rather than a line inside it.
+                kind = 'zone';
+                top = well.top + 4;
+                height = Math.max(28, well.height - 8);
+            } else if (target.index < all.length) {
+                const next = this.overlayBox(all[target.index]);
+                const previous = target.index > 0 ? this.overlayBox(all[target.index - 1]) : null;
+
+                top = previous ? (previous.bottom + next.top) / 2 : next.top;
+            } else {
+                top = this.overlayBox(all[all.length - 1]).bottom;
+            }
+
+            const left = well.left + inset;
+            const width = Math.max(24, well.width - inset * 2);
+            const label = `${this.mode === 'move' ? 'Move' : 'Add'} here · ${this.placeName(container)}`;
+            const key = [kind, Math.round(left), Math.round(top), Math.round(width), Math.round(height), label].join('|');
+
+            if (key === this.indicatorKey) {
                 return;
             }
 
-            const blocks = this.directBlocks(target.container);
+            const first = indicator.dataset.visible !== 'true';
 
-            this.marker = document.createElement('div');
-            this.marker.className = 'fpb-drop-marker';
+            this.indicatorKey = key;
 
-            const before = blocks[target.index];
-
-            if (before) {
-                target.container.insertBefore(this.marker, before);
-            } else {
-                target.container.appendChild(this.marker);
+            if (first) {
+                // Appear where it belongs, instead of gliding in from the last target.
+                indicator.style.transition = 'none';
             }
 
-            motion.play({
-                targets: this.marker,
-                scaleX: [0.15, 1],
-                opacity: [0, 1],
-                easing: 'easeOutQuad',
-                duration: motion.duration.marker,
+            indicator.dataset.kind = kind;
+            indicator.style.transform = `translate3d(${left}px, ${kind === 'line' ? top - 2 : top}px, 0)`;
+            indicator.style.width = `${width}px`;
+            indicator.style.height = `${height}px`;
+
+            if (this.$refs.indicatorLabel) {
+                this.$refs.indicatorLabel.textContent = label;
+            }
+
+            if (first) {
+                void indicator.offsetWidth;
+                indicator.style.transition = '';
+                indicator.dataset.visible = 'true';
+            }
+        },
+
+        hideIndicator() {
+            const indicator = this.$refs.indicator;
+
+            this.indicatorKey = null;
+
+            if (indicator) {
+                delete indicator.dataset.visible;
+            }
+        },
+
+        /** "page", or "column 2" — what the indicator says it is dropping into. */
+        placeName(container) {
+            if (!container.classList.contains('fpb-slot')) {
+                return 'page';
+            }
+
+            const match = /(\d+)$/.exec(container.dataset.fpbSlot ?? '');
+
+            return match ? `column ${Number(match[1]) + 1}` : 'column';
+        },
+
+        /* ── Editor decoration: column handles and readouts ── */
+
+        watchSize() {
+            const canvas = this.canvas();
+
+            if (!canvas || typeof ResizeObserver === 'undefined') {
+                return;
+            }
+
+            this.sizeObserver = new ResizeObserver(() => this.refreshOverlay());
+            this.sizeObserver.observe(canvas);
+        },
+
+        refreshOverlay() {
+            if (this.overlayQueued) {
+                return;
+            }
+
+            this.overlayQueued = true;
+
+            requestAnimationFrame(() => {
+                this.overlayQueued = false;
+
+                if (!this.resizing) {
+                    this.mountColumnHandles();
+                }
             });
         },
 
-        removeMarker() {
-            if (this.marker && this.marker.parentNode) {
-                this.marker.parentNode.removeChild(this.marker);
+        clearColumnHandles() {
+            this.$refs.overlay?.querySelectorAll('.fpb-col-handle').forEach((el) => el.remove());
+        },
+
+        /**
+         * Grab handles on the edges between a selected section's columns.
+         *
+         * Drawn on the overlay, not in the section, so they survive nothing and cost
+         * nothing: they are rebuilt from the section's live geometry whenever the canvas
+         * settles, and a drag previews by restyling the grid in place before one call
+         * commits it.
+         */
+        mountColumnHandles() {
+            this.clearColumnHandles();
+
+            const overlay = this.$refs.overlay;
+
+            if (!overlay || this.narrow || this.mode || this.previewing || !this.frame()) {
+                return;
             }
 
-            this.marker = null;
+            const block = this.$root.querySelector('.fpb-block[data-selected="true"][data-container="true"]');
+            const section = block?.querySelector(':scope > .fpb-block-body > [data-fpb-tracks]');
+
+            if (!section) {
+                return;
+            }
+
+            const slots = this.slotsOf(section);
+
+            if (slots.length < 2) {
+                return;
+            }
+
+            const boxes = slots.map((el) => this.overlayBox(el));
+
+            // Stacked on a narrow canvas: there is no edge between them to drag.
+            if (boxes[1].top >= boxes[0].bottom - 1) {
+                return;
+            }
+
+            for (let i = 0; i < slots.length - 1; i++) {
+                const handle = document.createElement('div');
+
+                handle.className = 'fpb-col-handle';
+                handle.title = 'Drag to resize the columns';
+                this.placeColumnHandle(handle, boxes[i], boxes[i + 1]);
+                handle.addEventListener('pointerdown', (event) => this.startColumnResize(event, block.dataset.id, section, i));
+                overlay.appendChild(handle);
+            }
+        },
+
+        placeColumnHandle(handle, left, right) {
+            const x = (left.right + right.left) / 2;
+            const top = Math.min(left.top, right.top);
+            const bottom = Math.max(left.bottom, right.bottom);
+
+            handle.style.transform = `translate3d(${x}px, ${top}px, 0)`;
+            handle.style.height = `${bottom - top}px`;
+        },
+
+        slotsOf(section) {
+            return Array.from(section.children).filter((el) => el.classList.contains('fpb-slot'));
+        },
+
+        showTip(text, event) {
+            const tip = this.$refs.sizeTip;
+            const frame = this.frame();
+
+            if (!tip || !frame) {
+                return;
+            }
+
+            const outer = frame.getBoundingClientRect();
+
+            tip.textContent = text;
+            tip.style.transform = `translate3d(${event.clientX - outer.left + frame.scrollLeft + 14}px, ${event.clientY - outer.top + frame.scrollTop + 14}px, 0)`;
+            tip.dataset.visible = 'true';
+        },
+
+        hideTip() {
+            if (this.$refs.sizeTip) {
+                delete this.$refs.sizeTip.dataset.visible;
+            }
+        },
+
+        /* ── Resizing ─────────────────────────────────────── */
+
+        /**
+         * Drag a selected block's right edge (width) or bottom edge (height).
+         *
+         * The block is restyled locally while the pointer moves and the value is sent
+         * once, on release, so the whole drag is one undo step. Only inline styles change
+         * during the drag — never the DOM tree — so the canvas's mutation observer does
+         * not mistake a resize for blocks being reordered.
+         */
+        startResize(event, id, axis) {
+            const block = this.blockEl(id);
+            const body = block?.querySelector(':scope > .fpb-block-body');
+
+            if (!block || !body || event.button > 0) {
+                return;
+            }
+
+            const spacer = axis === 'height' && block.dataset.type === 'spacer' ? body.querySelector('.fpb-spacer') : null;
+            const parent = block.parentElement;
+
+            this.closeMenu();
+            this.resizing = {
+                kind: 'block',
+                id,
+                axis,
+                block,
+                body,
+                spacer,
+                startX: event.clientX,
+                startY: event.clientY,
+                startWidth: block.getBoundingClientRect().width,
+                startHeight: (spacer ?? body).getBoundingClientRect().height,
+                parentWidth: parent?.clientWidth || parent?.getBoundingClientRect().width || 1,
+                value: null,
+            };
+
+            this.listenForResize(axis === 'width' ? 'x' : 'y');
+        },
+
+        moveResize(event) {
+            const resize = this.resizing;
+
+            if (!resize) {
+                return;
+            }
+
+            if (resize.kind === 'columns') {
+                return this.moveColumnResize(event);
+            }
+
+            if (resize.axis === 'width') {
+                const width = resize.startWidth + (event.clientX - resize.startX);
+                const percent = Math.max(5, Math.min(100, Math.round((width / resize.parentWidth) * 100)));
+
+                resize.value = percent;
+                resize.block.style.width = percent === 100 ? '' : `${percent}%`;
+
+                return this.showTip(percent === 100 ? 'Full width' : `${percent}% wide`, event);
+            }
+
+            const height = Math.max(resize.spacer ? 4 : 0, Math.min(4000, Math.round((resize.startHeight + (event.clientY - resize.startY)) / 4) * 4));
+
+            resize.value = height;
+
+            if (resize.spacer) {
+                resize.spacer.style.height = `${height}px`;
+            } else {
+                resize.body.style.minHeight = `${height}px`;
+            }
+
+            this.showTip(`${height}px tall`, event);
+        },
+
+        endResize() {
+            const resize = this.resizing;
+
+            this.stopResize();
+
+            if (!resize || resize.value === null) {
+                return;
+            }
+
+            // The block already sits at its new size; a FLIP from before the drag would
+            // replay the whole resize as a slide once the server answers.
+            this.before = null;
+            this.capturedAt = 0;
+
+            if (resize.kind === 'columns') {
+                if (resize.tracks.join('-') !== resize.start.join('-')) {
+                    this.$wire.resizeColumns(resize.id, resize.tracks);
+                }
+
+                return;
+            }
+
+            const value = resize.axis === 'width' && resize.value >= 100 ? null : resize.value;
+
+            this.$wire.resizeBlock(resize.id, resize.axis, value);
+        },
+
+        resetSize(id, axis) {
+            this.$wire.resizeBlock(id, axis, null);
+        },
+
+        listenForResize(direction) {
+            const move = (event) => this.moveResize(event);
+            const up = () => this.endResize();
+
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+
+            this.resizing.off = () => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                window.removeEventListener('pointercancel', up);
+            };
+
+            document.body.dataset.fpbResizing = direction;
+        },
+
+        stopResize() {
+            this.resizing?.off?.();
+            this.resizing?.handle?.removeAttribute('data-active');
+            this.resizing = null;
+            delete document.body.dataset.fpbResizing;
+            this.hideTip();
+        },
+
+        startColumnResize(event, id, section, index) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const tracks = (section.dataset.fpbTracks ?? '').split('-').map(Number);
+            const slots = this.slotsOf(section);
+
+            if (tracks.length !== slots.length || tracks.some((track) => !Number.isFinite(track) || track <= 0)) {
+                return;
+            }
+
+            const handle = event.currentTarget;
+
+            handle.dataset.active = 'true';
+            this.closeMenu();
+            this.resizing = {
+                kind: 'columns',
+                id,
+                section,
+                index,
+                handle,
+                startX: event.clientX,
+                start: [...tracks],
+                tracks: [...tracks],
+                total: slots.reduce((sum, el) => sum + el.getBoundingClientRect().width, 0) || 1,
+                value: tracks,
+            };
+
+            this.listenForResize('x');
+        },
+
+        moveColumnResize(event) {
+            const resize = this.resizing;
+            const pair = resize.start[resize.index] + resize.start[resize.index + 1];
+            const share = resize.start[resize.index] + ((event.clientX - resize.startX) / resize.total) * 100;
+            const left = Math.round(Math.min(pair - 5, Math.max(5, share)));
+
+            resize.tracks = [...resize.start];
+            resize.tracks[resize.index] = left;
+            resize.tracks[resize.index + 1] = pair - left;
+            resize.value = resize.tracks;
+            resize.section.style.gridTemplateColumns = resize.tracks.map((track) => `minmax(0, ${track}fr)`).join(' ');
+
+            const slots = this.slotsOf(resize.section);
+
+            this.placeColumnHandle(resize.handle, this.overlayBox(slots[resize.index]), this.overlayBox(slots[resize.index + 1]));
+            this.showTip(resize.tracks.map((track) => `${track}%`).join(' · '), event);
+        },
+
+        /* ── Adding blocks ────────────────────────────────── */
+
+        /**
+         * Add from the palette, then put the caret in the new block.
+         *
+         * Picking "Button" after typing into a text block used to leave the new button
+         * selected but not in hand: the caret stayed nowhere and the label had to be found
+         * and clicked. A new block with text of its own is ready to type into instead.
+         */
+        insertFromPalette(type) {
+            this.afterPaletteInsert();
+            this.captureRects();
+
+            return this.$wire.insertBlock(type).then((id) => this.focusEditable(id));
+        },
+
+        focusEditable(id) {
+            if (!id || this.narrow) {
+                return;
+            }
+
+            requestAnimationFrame(() => {
+                const field = this.blockEl(id)?.querySelector('[data-fpb-field][contenteditable]');
+
+                if (!field) {
+                    return;
+                }
+
+                field.focus({ preventScroll: true });
+
+                const range = document.createRange();
+                const selection = window.getSelection();
+
+                range.selectNodeContents(field);
+                range.collapse(false);
+                selection?.removeAllRanges();
+                selection?.addRange(range);
+            });
+        },
+
+        /**
+         * Point at the inspector field behind the element being typed into.
+         */
+        revealField(field) {
+            if (this.narrow || !field) {
+                return;
+            }
+
+            this.inspectorTab = 'content';
+
+            this.$nextTick(() => {
+                const input = this.$root.querySelector(`.fpb-inspector [id="form.${this.cssEscape(field)}"]`);
+                const wrapper = input?.closest('.fi-fo-field') ?? input;
+
+                if (!wrapper) {
+                    return;
+                }
+
+                wrapper.scrollIntoView({ block: 'nearest', behavior: motion.enabled ? 'smooth' : 'auto' });
+                wrapper.classList.remove('fpb-field-flash');
+                void wrapper.offsetWidth;
+                wrapper.classList.add('fpb-field-flash');
+                setTimeout(() => wrapper.classList.remove('fpb-field-flash'), 1400);
+            });
+        },
+
+        humanise(field) {
+            const words = String(field ?? '').replace(/[_-]+/g, ' ').trim();
+
+            return words === '' ? null : words.charAt(0).toUpperCase() + words.slice(1);
+        },
+
+        /* ── The right-click menu ─────────────────────────── */
+
+        onContextMenu(event) {
+            const target = event.target instanceof Element ? event.target : null;
+            const block = target?.closest('.fpb-block');
+
+            // Right-clicking the text being typed keeps the browser's own menu, which is
+            // where spelling suggestions live.
+            if (!block || (target.closest('[data-fpb-field]') && target.closest('[data-fpb-field]') === document.activeElement)) {
+                return;
+            }
+
+            event.preventDefault();
+            this.openMenuAt(block.dataset.id, event.clientX, event.clientY);
+        },
+
+        /** The ⋯ button on a block's bar opens the same menu, for anyone who never right-clicks. */
+        openMenu(event, id) {
+            const box = event.currentTarget.getBoundingClientRect();
+
+            this.openMenuAt(id, box.right - 8, box.bottom + 4);
+        },
+
+        openMenuAt(id, x, y) {
+            const block = this.blockEl(id);
+
+            if (!block) {
+                return;
+            }
+
+            if (this.$wire.selectedId !== id) {
+                this.$wire.selectBlock(id);
+            }
+
+            this.menu = {
+                open: true,
+                x,
+                y,
+                id,
+                label: block.querySelector(':scope > .fpb-block-bar .fpb-block-label')?.textContent.trim() ?? '',
+                parent: Boolean(block.dataset.parent),
+                container: block.dataset.container === 'true',
+            };
+
+            this.$nextTick(() => {
+                const menu = this.$refs.menu;
+
+                if (!menu) {
+                    return;
+                }
+
+                const box = menu.getBoundingClientRect();
+
+                this.menu.x = Math.max(8, Math.min(x, window.innerWidth - box.width - 8));
+                this.menu.y = Math.max(8, Math.min(y, window.innerHeight - box.height - 8));
+                menu.querySelector('.fpb-menu-item')?.focus({ preventScroll: true });
+            });
+        },
+
+        closeMenu() {
+            if (this.menu.open) {
+                this.menu.open = false;
+            }
+        },
+
+        /** Close the menu, then act on the block it was opened for. */
+        fromMenu(action) {
+            const id = this.menu.id;
+
+            this.closeMenu();
+
+            return id ? action(id, this.blockEl(id)) : null;
+        },
+
+        menuInspect(tab) {
+            this.fromMenu(() => {
+                if (this.narrow) {
+                    this.showWorkspace('settings');
+                }
+
+                this.inspectorTab = tab;
+            });
+        },
+
+        menuSelectParent() {
+            this.fromMenu((id, el) => el?.dataset.parent && this.$wire.selectBlock(el.dataset.parent));
+        },
+
+        menuCopy() {
+            this.fromMenu((id) => this.copyBlock(id));
+        },
+
+        menuPaste(placement) {
+            this.fromMenu((id) => this.clipboard && this.pasteClipboard(this.clipboard, id, placement));
+        },
+
+        menuCopyStyle() {
+            this.fromMenu((id, el) => this.$wire.copyBlockStyle(id).then((look) => {
+                this.styleClipboard = look;
+                this.stash('fpb.style-clipboard', JSON.stringify(look));
+                motion.flash(el);
+                this.say('Style copied. Right-click another block → Paste style.');
+            }));
+        },
+
+        menuPasteStyle() {
+            this.fromMenu((id) => this.styleClipboard && this.$wire.pasteBlockStyle(id, this.styleClipboard));
+        },
+
+        menuAddBelow() {
+            this.fromMenu(() => {
+                if (this.narrow) {
+                    return this.showWorkspace('blocks');
+                }
+
+                this.sideTab = 'blocks';
+                this.$nextTick(() => this.$refs.paletteSearch?.focus());
+            });
+        },
+
+        menuDuplicate() {
+            this.fromMenu((id) => this.$wire.duplicateBlock(id));
+        },
+
+        menuMove(step) {
+            this.fromMenu((id) => this.moveSelected(id, step));
+        },
+
+        menuResetStyle() {
+            this.fromMenu((id) => this.$wire.resetBlockStyle(id));
+        },
+
+        menuDelete() {
+            this.fromMenu((id, el) => this.remove(id, el?.dataset.hasContent === 'true'));
+        },
+
+        keys(letter) {
+            return this.isMac ? `⌘${letter}` : `Ctrl+${letter}`;
+        },
+
+        /* ── Copy and paste ───────────────────────────────── */
+
+        restoreClipboard() {
+            try {
+                this.clipboard = window.localStorage.getItem('fpb.clipboard');
+                const look = window.localStorage.getItem('fpb.style-clipboard');
+                this.styleClipboard = look ? JSON.parse(look) : null;
+            } catch {
+                // Storage can be off (private mode, a policy); the system clipboard still works.
+            }
+        },
+
+        stash(key, value) {
+            try {
+                window.localStorage.setItem(key, value);
+            } catch {
+                // Not fatal: the copy still lives on the system clipboard for this session.
+            }
+        },
+
+        hasTextSelection() {
+            const selection = window.getSelection?.();
+
+            return Boolean(selection && !selection.isCollapsed && selection.toString().trim() !== '');
+        },
+
+        /**
+         * Copy a block and everything in it.
+         *
+         * Written to the system clipboard, so it pastes into another tab or another page,
+         * and kept locally, because not every browser lets a page read the clipboard back.
+         */
+        async copyBlock(id) {
+            const json = await this.$wire.copyBlocks(id);
+
+            if (!json) {
+                return;
+            }
+
+            this.clipboard = json;
+            this.stash('fpb.clipboard', json);
+
+            try {
+                await navigator.clipboard?.writeText(json);
+            } catch {
+                // Refused without a fresh click in some browsers; the local copy covers it.
+            }
+
+            motion.flash(this.blockEl(id));
+            this.say(`Copied. Paste with ${this.keys('V')}, here or on another page.`);
+        },
+
+        onPaste(event) {
+            if (this.previewing || this.isTyping(event) || this.narrow) {
+                return;
+            }
+
+            const text = event.clipboardData?.getData('text/plain') ?? '';
+            const payload = text.trim() !== '' ? text : this.clipboard;
+
+            if (!payload) {
+                return;
+            }
+
+            event.preventDefault();
+            this.pasteClipboard(payload, this.$wire.selectedId ?? null, 'after');
+        },
+
+        /**
+         * Paste a copied block, or anything else: the server decides what the clipboard
+         * holds. Copied blocks come back as blocks, HTML as a Custom code block for those
+         * allowed one, and plain text as a text block.
+         */
+        pasteClipboard(payload, targetId, placement) {
+            this.captureRects();
+
+            return this.$wire.pasteBlocks(payload, targetId ?? null, placement);
+        },
+
+        say(text) {
+            this.notice = text;
+            clearTimeout(this.noticeTimer);
+            this.noticeTimer = setTimeout(() => {
+                this.notice = null;
+            }, 2600);
+        },
+
+        /* ── Preview ──────────────────────────────────────── */
+
+        openPreview() {
+            this.flushActiveEditable();
+            this.closeMenu();
+            this.previewDevice = this.preview;
+            this.previewing = true;
+
+            return this.refreshPreview();
+        },
+
+        async refreshPreview() {
+            const frame = this.$refs.previewFrame;
+
+            if (!frame) {
+                return;
+            }
+
+            this.previewLoading = true;
+            frame.onload = () => {
+                this.previewLoading = false;
+            };
+
+            try {
+                frame.srcdoc = await this.$wire.previewDocument();
+            } catch {
+                this.previewLoading = false;
+            }
+        },
+
+        closePreview() {
+            this.previewing = false;
+            this.previewLoading = false;
+
+            // An empty document stops any video or script the preview left running.
+            if (this.$refs.previewFrame) {
+                this.$refs.previewFrame.srcdoc = '';
+            }
+
+            this.refreshOverlay();
         },
     }));
 });

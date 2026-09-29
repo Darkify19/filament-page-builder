@@ -45,7 +45,7 @@ members=$( {
     grep -rhoE 'wire:click(\.[a-z]+)*="[a-zA-Z_]+' resources/views | sed -E 's/.*="//'
 } | sort -u)
 for member in $members; do
-    if grep -qE "public function ${member}\(|public [?a-zA-Z|]+ \\\$${member}\b" "$PAGE"; then
+    if grep -rqE "public function ${member}\(|public [?a-zA-Z|]+ \\\$${member}\b" "$PAGE" src/Filament/Pages/Concerns; then
         ok "$member"
     else
         miss "$member  (called from the canvas but not public on DesignPage)"

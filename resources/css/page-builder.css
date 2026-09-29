@@ -10,6 +10,7 @@
 .fpb {
     display: grid;
     grid-template-columns: 16rem minmax(0, 1fr) 20rem;
+    transition: grid-template-columns 0.2s ease;
     grid-template-rows: auto minmax(0, 1fr);
     gap: 0;
     align-items: stretch;
@@ -30,6 +31,8 @@
  * Declared on .fpb rather than :root so an application setting these on :root still
  * wins in light mode, which is the extension point these variables already were.
  */
+.fpb[data-wide="true"] { grid-template-columns: 16rem minmax(0, 1fr) 32rem; }
+
 html.dark .fpb {
     --fpb-editor-bg: #18181b;
     --fpb-panel-bg: #27272a;
@@ -173,6 +176,7 @@ html.dark .fpb {
  * its content height, and `min-height: 100%` still fills the frame on a short page.
  */
 .fpb-canvas-frame {
+    position: relative;
     display: flex; justify-content: center; align-items: flex-start;
     flex: 1;
     min-height: 0;
@@ -285,16 +289,6 @@ body.fpb-edit-mode .fpb-slot[data-drop-active="true"] {
 .fpb-slot-empty {
     margin: 0; padding: 1.25rem 0.75rem;
     text-align: center; font-size: 0.78rem; opacity: 0.55;
-}
-
-/*
- * The line that says "here". Scaled in from the centre by the canvas script, so the
- * origin has to be the middle rather than the inline-start edge the default would use.
- */
-.fpb-drop-marker {
-    height: 3px; background: #2563eb; margin: 0; border-radius: 2px;
-    transform-origin: center;
-    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25), 0 2px 10px rgba(37, 99, 235, 0.45);
 }
 
 /*
@@ -449,6 +443,343 @@ html.dark .fpb-style-field input { color-scheme: dark; }
 
 .fpb-page .fpb-section { padding: 0; }
 
+/* ── Shipped primitives, continued ───────────────────────────────────────── */
+
+.fpb-heading {
+    margin: 0; padding: 0.5rem 1rem; line-height: 1.2; font-weight: 700;
+    text-align: var(--fpb-text-align, inherit); white-space: pre-line; min-height: 1.2em;
+}
+.fpb-heading[data-fpb-level="h1"] { font-size: 2.5rem; }
+.fpb-heading[data-fpb-level="h2"] { font-size: 2rem; }
+.fpb-heading[data-fpb-level="h3"] { font-size: 1.6rem; }
+.fpb-heading[data-fpb-level="h4"] { font-size: 1.3rem; }
+.fpb-heading[data-fpb-level="h5"] { font-size: 1.1rem; }
+.fpb-heading[data-fpb-level="h6"] { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.fpb-list { margin: 0; padding: 0.5rem 1rem 0.5rem 2.25rem; }
+.fpb-list li + li { margin-top: 0.35rem; }
+.fpb-list[data-fpb-marker="none"] { list-style: none; padding-left: 1rem; }
+.fpb-list[data-fpb-marker="check"] { list-style: none; padding-left: 1rem; }
+.fpb-list[data-fpb-marker="check"] li { position: relative; padding-left: 1.6rem; }
+.fpb-list[data-fpb-marker="check"] li::before {
+    content: '✓'; position: absolute; left: 0; top: 0; font-weight: 700; color: var(--fpb-accent, #16a34a);
+}
+
+.fpb-quote { margin: 0; padding: 0.75rem 1rem; }
+.fpb-quote blockquote {
+    margin: 0; padding: 0.25rem 0 0.25rem 1rem; border-left: 4px solid currentColor;
+    font-size: 1.2rem; font-style: italic; line-height: 1.5; white-space: pre-line; min-height: 1.5em;
+}
+.fpb-quote figcaption { margin-top: 0.5rem; padding-left: 1rem; font-size: 0.9rem; opacity: 0.75; }
+.fpb-quote figcaption::before { content: '— '; }
+
+.fpb-video { position: relative; width: 100%; }
+.fpb-video video { display: block; width: 100%; height: auto; background: #000; }
+.fpb-video[data-fpb-ratio] video { height: 100%; object-fit: cover; }
+.fpb-video[data-fpb-ratio="16-9"] { aspect-ratio: 16 / 9; }
+.fpb-video[data-fpb-ratio="4-3"] { aspect-ratio: 4 / 3; }
+.fpb-video[data-fpb-ratio="1-1"] { aspect-ratio: 1 / 1; }
+.fpb-video[data-fpb-ratio="9-16"] { aspect-ratio: 9 / 16; max-height: 80vh; margin-inline: auto; }
+.fpb-video[data-fpb-ratio="21-9"] { aspect-ratio: 21 / 9; }
+
+.fpb-embed[data-fpb-ratio="4-3"] { padding-bottom: 75%; }
+.fpb-embed[data-fpb-ratio="1-1"] { padding-bottom: 100%; }
+.fpb-embed[data-fpb-ratio="3-4"] { padding-bottom: 133.33%; }
+.fpb-embed[data-fpb-ratio="9-16"] { padding-bottom: 177.78%; }
+.fpb-embed[data-fpb-ratio="21-9"] { padding-bottom: 42.86%; }
+.fpb-embed-note { margin: 0; padding: 0.35rem 1rem; font-size: 0.72rem; opacity: 0.6; }
+
+.fpb-image-frame { position: relative; display: block; }
+.fpb-image-overlay { position: absolute; inset: 0; pointer-events: none; }
+
+.fpb-code { position: relative; }
+.fpb-code-note, .fpb-placeholder {
+    margin: 0; padding: 0.6rem 1rem; font-size: 0.75rem; opacity: 0.6; text-align: center;
+}
+.fpb-code-note { font-family: ui-monospace, monospace; }
+.fpb-shortcode-error {
+    display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.25rem;
+    background: rgba(220, 38, 38, 0.1); color: #b91c1c; font-size: 0.8em;
+}
+
+/* The spacer on the canvas: say what it is and how tall. Invisible on the page. */
+.fpb-spacer { position: relative; }
+.fpb-block-body > .fpb-spacer {
+    background: repeating-linear-gradient(-45deg, rgba(37, 99, 235, 0.07) 0 6px, transparent 6px 12px);
+    outline: 1px dashed rgba(37, 99, 235, 0.3); outline-offset: -1px;
+}
+.fpb-spacer-label {
+    position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
+    padding: 0 0.4rem; border-radius: 999px; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.02em;
+    white-space: nowrap; background: rgba(255, 255, 255, 0.85); color: #1d4ed8;
+}
+.fpb-spacer[data-fpb-height="sm"] .fpb-spacer-label { display: none; }
+
+/* ── Sections: space, alignment and stacking on small screens ───────────── */
+
+.fpb-section[data-fpb-gap="none"] { gap: 0; }
+.fpb-section[data-fpb-gap="sm"] { gap: 0.5rem; }
+.fpb-section[data-fpb-gap="md"] { gap: 1rem; }
+.fpb-section[data-fpb-gap="lg"] { gap: 2rem; }
+.fpb-section[data-fpb-gap="xl"] { gap: 3.5rem; }
+.fpb-section[data-fpb-valign="start"] { align-items: start; }
+.fpb-section[data-fpb-valign="center"] { align-items: center; }
+.fpb-section[data-fpb-valign="end"] { align-items: end; }
+.fpb-section[data-fpb-valign="stretch"] { align-items: stretch; }
+
+/*
+ * Columns stack on a phone (and on a tablet if asked). Written twice: a media query for
+ * the published page and the Preview frame, and a container query for the canvas, whose
+ * Tablet and Mobile widths are a narrower box rather than a narrower window.
+ */
+@media (max-width: 640px) {
+    .fpb-page .fpb-section[data-fpb-stack="mobile"],
+    .fpb-page .fpb-section[data-fpb-stack="tablet"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 1024px) {
+    .fpb-page .fpb-section[data-fpb-stack="tablet"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@container fpb-canvas (max-width: 640px) {
+    .fpb-section[data-fpb-stack="mobile"],
+    .fpb-section[data-fpb-stack="tablet"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@container fpb-canvas (max-width: 1024px) {
+    .fpb-section[data-fpb-stack="tablet"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* ── Backgrounds: video and overlay layers ───────────────────────────────── */
+
+.fpb-bg {
+    position: absolute; inset: 0; z-index: -1; overflow: hidden;
+    border-radius: inherit; pointer-events: none; container-type: size;
+}
+.fpb-bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fpb-bg-frame {
+    position: absolute; top: 50%; left: 50%; border: 0;
+    width: max(100cqw, 177.78cqh); height: max(100cqh, 56.25cqw);
+    transform: translate(-50%, -50%);
+}
+.fpb-bg-overlay { position: absolute; inset: 0; }
+
+/* ── The editor: blocks you can grab by the edges ────────────────────────── */
+
+.fpb-block-quick { display: inline-flex; align-items: center; gap: 0.05rem; margin-right: 0.35rem; }
+.fpb-block-quick button {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.35rem; height: 1.2rem; padding: 0; border: 0; border-radius: 0.25rem;
+    background: transparent; color: #fff; opacity: 0.7; cursor: pointer;
+}
+.fpb-block-quick button:hover { opacity: 1; background: rgba(255, 255, 255, 0.12); }
+.fpb-block-quick button[data-active="true"] { opacity: 1; background: #2563eb; }
+.fpb-quick-icon { width: 0.85rem; height: 0.85rem; }
+.fpb-block-tools .fpb-block-more { font-size: 0.9rem; line-height: 1; }
+
+.fpb-resize {
+    position: absolute; z-index: 3; touch-action: none;
+    background: transparent;
+}
+.fpb-resize::after {
+    content: ''; position: absolute; border-radius: 999px; background: #2563eb;
+    box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(15, 23, 42, 0.3);
+    transition: transform 0.12s ease;
+}
+.fpb-resize-x { top: 50%; right: -3px; width: 12px; height: 2.5rem; margin-top: -1.25rem; cursor: ew-resize; }
+.fpb-resize-x::after { inset: 0.35rem 3px; }
+.fpb-resize-y { left: 50%; bottom: -3px; width: 2.5rem; height: 12px; margin-left: -1.25rem; cursor: ns-resize; }
+.fpb-resize-y::after { inset: 3px 0.35rem; }
+.fpb-resize:hover::after { transform: scale(1.25); }
+
+body[data-fpb-resizing],
+body[data-fpb-resizing] * { user-select: none !important; }
+body[data-fpb-resizing="x"],
+body[data-fpb-resizing="x"] * { cursor: ew-resize !important; }
+body[data-fpb-resizing="y"],
+body[data-fpb-resizing="y"] * { cursor: ns-resize !important; }
+
+/* Selected embeds and videos play on the canvas; anything else stays click-to-select. */
+.fpb-block[data-selected="true"] > .fpb-block-body .fpb-embed iframe,
+.fpb-block[data-selected="true"] > .fpb-block-body .fpb-video video { pointer-events: auto; }
+
+/*
+ * The overlay: editor decoration drawn beside the canvas rather than inside it.
+ * It is a zero-size layer at the frame's origin; everything on it is positioned with a
+ * transform in the frame's scroll coordinates, so it scrolls with the page.
+ */
+.fpb-overlay { position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 4; pointer-events: none; }
+
+.fpb-drop-indicator {
+    position: absolute; top: 0; left: 0; height: 4px;
+    display: flex; align-items: center; justify-content: space-between;
+    opacity: 0; transform-origin: center;
+    transition:
+        transform 0.14s cubic-bezier(0.2, 0.7, 0.2, 1),
+        width 0.14s cubic-bezier(0.2, 0.7, 0.2, 1),
+        height 0.14s cubic-bezier(0.2, 0.7, 0.2, 1),
+        opacity 0.12s ease;
+    will-change: transform;
+}
+.fpb-drop-indicator[data-visible="true"] { opacity: 1; }
+.fpb-drop-indicator[data-kind="line"]::before {
+    content: ''; position: absolute; inset: 0; border-radius: 999px;
+    background: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18), 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+.fpb-drop-indicator[data-kind="zone"] {
+    border: 2px dashed #2563eb; border-radius: 0.5rem; background: rgba(37, 99, 235, 0.08);
+    justify-content: center;
+}
+.fpb-drop-cap {
+    position: relative; width: 10px; height: 10px; margin: 0 -5px; border-radius: 999px;
+    background: #fff; border: 2px solid #2563eb; box-sizing: border-box;
+}
+.fpb-drop-indicator[data-kind="zone"] .fpb-drop-cap { display: none; }
+.fpb-drop-label {
+    position: relative; padding: 0.15rem 0.55rem; border-radius: 999px;
+    background: #2563eb; color: #fff; font-size: 0.68rem; font-weight: 650; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+.fpb-drop-indicator[data-kind="line"][data-visible="true"] .fpb-drop-label { animation: fpb-drop-pulse 1.4s ease-in-out infinite; }
+@keyframes fpb-drop-pulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35); }
+    50% { box-shadow: 0 2px 16px rgba(37, 99, 235, 0.6); }
+}
+
+.fpb-col-handle {
+    position: absolute; top: 0; left: -7px; width: 14px; pointer-events: auto;
+    cursor: col-resize; touch-action: none;
+}
+.fpb-col-handle::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; border-radius: 2px;
+    background: rgba(37, 99, 235, 0.35); transition: background 0.12s ease, width 0.12s ease, left 0.12s ease;
+}
+.fpb-col-handle::after {
+    content: ''; position: absolute; top: 50%; left: 2px; width: 10px; height: 2.25rem; margin-top: -1.125rem;
+    border-radius: 999px; background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(15, 23, 42, 0.3);
+}
+.fpb-col-handle:hover::before,
+.fpb-col-handle[data-active="true"]::before { left: 5px; width: 4px; background: #2563eb; }
+
+.fpb-size-tip {
+    position: absolute; top: 0; left: 0; padding: 0.2rem 0.5rem; border-radius: 0.35rem;
+    background: #111827; color: #fff; font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+    opacity: 0; transition: opacity 0.1s ease;
+}
+.fpb-size-tip[data-visible="true"] { opacity: 1; }
+
+/* ── The inspector: one panel per element ────────────────────────────────── */
+
+.fpb-inspector-head {
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    margin: -0.25rem 0 0.75rem; padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+.fpb-inspector-icon {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 2.1rem; height: 2.1rem; border-radius: 0.5rem;
+    background: rgba(37, 99, 235, 0.1); color: #2563eb;
+}
+.fpb-inspector-icon svg { width: 1.15rem; height: 1.15rem; }
+.fpb-inspector-heading { flex: 1; min-width: 0; }
+.fpb-inspector-heading .fpb-panel-title { margin: 0; font-size: 0.95rem; line-height: 1.3; }
+.fpb-inspector-desc { margin: 0.1rem 0 0; font-size: 0.72rem; opacity: 0.65; }
+.fpb-inspector-parent {
+    margin-top: 0.15rem; padding: 0; border: 0; background: transparent; color: #2563eb;
+    font-size: 0.72rem; font-weight: 600; cursor: pointer;
+}
+.fpb-inspector-parent:hover { text-decoration: underline; }
+.fpb-inspector-actions { display: flex; gap: 0.15rem; flex: none; }
+.fpb-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem;
+    padding: 0; border: 0; border-radius: 0.375rem; background: transparent; color: inherit; opacity: 0.6; cursor: pointer;
+}
+.fpb-icon-btn:hover, .fpb-icon-btn[aria-pressed="true"] { opacity: 1; background: rgba(128, 128, 128, 0.12); }
+.fpb-icon { width: 1rem; height: 1rem; }
+
+.fpb-style-panel { display: grid; gap: 0.75rem; }
+.fpb-style-panel > .fi-sc,
+.fpb-style-panel .fi-sc { gap: 0.75rem; }
+.fpb-presets { border: 1px solid rgba(128, 128, 128, 0.22); border-radius: 0.6rem; padding: 0.6rem 0.75rem; }
+.fpb-presets summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+.fpb-presets[open] summary { margin-bottom: 0.5rem; }
+.fpb-anchor-field small { margin: 0; }
+
+.fpb-field-flash { animation: fpb-field-flash 1.3s ease-out; border-radius: 0.5rem; }
+@keyframes fpb-field-flash {
+    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); background: transparent; }
+    15% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35); background: rgba(37, 99, 235, 0.06); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); background: transparent; }
+}
+
+.fpb-crumb-field { display: inline-flex; gap: 0.25rem; font-weight: 700; color: #2563eb; }
+.fpb-notice {
+    font-size: 0.75rem; font-weight: 600; color: #15803d;
+    max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.fpb-shortcode-ref { display: block; font-size: 0.75rem; line-height: 1.5; }
+.fpb-shortcode-ref ul { margin: 0.35rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.3rem; }
+.fpb-shortcode-ref code { font-family: ui-monospace, monospace; font-size: 0.72rem; padding: 0.05rem 0.3rem; border-radius: 0.25rem; background: rgba(128, 128, 128, 0.14); }
+.fpb-shortcode-ref span { opacity: 0.7; }
+
+/* ── The right-click menu ────────────────────────────────────────────────── */
+
+.fpb-menu {
+    position: fixed; z-index: 60; min-width: 13.5rem; padding: 0.3rem;
+    border: 1px solid rgba(128, 128, 128, 0.25); border-radius: 0.6rem;
+    background: var(--fpb-panel-bg, #fff); color: inherit;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.08);
+    font-size: 0.8rem;
+}
+.fpb-menu-title {
+    margin: 0; padding: 0.3rem 0.55rem 0.35rem; font-size: 0.66rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5;
+}
+.fpb-menu-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%;
+    padding: 0.38rem 0.55rem; border: 0; border-radius: 0.4rem; background: transparent;
+    color: inherit; text-align: left; cursor: pointer;
+}
+.fpb-menu-item:hover:not(:disabled), .fpb-menu-item:focus-visible { background: rgba(37, 99, 235, 0.1); outline: none; }
+.fpb-menu-item:disabled { opacity: 0.4; cursor: default; }
+.fpb-menu-item kbd { font-family: ui-monospace, monospace; font-size: 0.68rem; opacity: 0.55; }
+.fpb-menu-danger { color: #dc2626; }
+.fpb-menu-danger:hover { background: rgba(220, 38, 38, 0.1) !important; }
+.fpb-menu-sep { margin: 0.25rem 0.3rem; border: 0; border-top: 1px solid rgba(128, 128, 128, 0.2); }
+
+/* ── Preview ─────────────────────────────────────────────────────────────── */
+
+.fpb-preview {
+    position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column;
+    background: var(--fpb-editor-bg, #f4f4f5);
+}
+.fpb-preview-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.55rem 0.85rem; border-bottom: 1px solid rgba(128, 128, 128, 0.22);
+    background: var(--fpb-panel-bg, #fff);
+}
+.fpb-preview-heading { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; }
+.fpb-preview-heading strong { font-size: 0.95rem; }
+.fpb-preview-note { font-size: 0.75rem; opacity: 0.65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fpb-preview-actions { display: flex; gap: 0.4rem; align-items: center; }
+.fpb-preview-close {
+    display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.75rem;
+    border: 0; border-radius: 0.45rem; background: #2563eb; color: #fff; font-size: 0.78rem; font-weight: 650; cursor: pointer;
+}
+.fpb-preview-close kbd { font-family: ui-monospace, monospace; font-size: 0.65rem; opacity: 0.75; }
+.fpb-preview-stage {
+    position: relative; flex: 1; min-height: 0; display: flex; justify-content: center;
+    padding: 1rem; overflow: auto;
+}
+.fpb-preview-frame {
+    width: 100%; height: 100%; border: 0; border-radius: 0.5rem; background: #fff;
+    box-shadow: 0 1px 12px rgba(15, 23, 42, 0.12); transition: width 0.2s ease;
+}
+.fpb-preview-frame[data-device="tablet"] { width: 768px; max-width: 100%; }
+.fpb-preview-frame[data-device="mobile"] { width: 390px; max-width: 100%; }
+.fpb-preview-loading {
+    position: absolute; top: 2rem; left: 50%; transform: translateX(-50%); margin: 0;
+    padding: 0.4rem 0.8rem; border-radius: 999px; background: #111827; color: #fff; font-size: 0.75rem;
+}
+
 /*
  * Full-screen edit mode. The Design page is a dedicated editor, so Filament's
  * sidebar, topbar and page header would only steal space from the canvas.
@@ -501,7 +832,8 @@ body.fpb-edit-mode .fi-main-ctn {
         overflow: hidden;
     }
 
-    .fpb {
+    .fpb,
+    .fpb[data-wide="true"] {
         position: relative;
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(0, 1fr) auto;
@@ -542,6 +874,9 @@ body.fpb-edit-mode .fi-main-ctn {
     }
 
     .fpb-block-handle { display: none; }
+    .fpb-resize, .fpb-block-quick { display: none; }
+    .fpb-preview-bar { flex-wrap: wrap; }
+    .fpb-preview-note { display: none; }
 
     .fpb-block-handle,
     .fpb-block-tools button {
