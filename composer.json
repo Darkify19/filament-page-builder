@@ -20,6 +20,8 @@
     ],
     "support": {
         "email": "cnoropesa@up.edu.ph",
+        "issues": "https://github.com/Darkify19/filament-page-builder/issues",
+        "source": "https://github.com/Darkify19/filament-page-builder",
         "docs": "https://darkify19.github.io/filament-page-builder/"
     },
     "require": {
