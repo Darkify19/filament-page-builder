@@ -3,7 +3,15 @@
 A drag-and-drop visual page builder for [Filament](https://filamentphp.com), storing page
 content as an ordered array of typed blocks in a single JSON column.
 
+<div class="filament-hidden">
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/carljanzell/filament-page-builder.svg?style=flat-square)](https://packagist.org/packages/carljanzell/filament-page-builder)
+[![Total Downloads](https://img.shields.io/packagist/dt/carljanzell/filament-page-builder.svg?style=flat-square)](https://packagist.org/packages/carljanzell/filament-page-builder)
+[![License](https://img.shields.io/packagist/l/carljanzell/filament-page-builder.svg?style=flat-square)](https://github.com/Darkify19/filament-page-builder/blob/main/LICENSE)
+
 **📖 [Documentation](https://darkify19.github.io/filament-page-builder/)**
+
+</div>
 
 > **Status: the canvas is a nested layout editor.** Palette with layout
 > primitives (including Embed), drag into columns, a document outline, token style
@@ -11,7 +19,8 @@ content as an ordered array of typed blocks in a single JSON column.
 > save lock — all persisting to the same JSON the form editor uses. On a phone,
 > Design mode is a one-panel editor (Blocks / Page / Settings). Still to come:
 > rich text in place, an image picker, draft/publish and reusable sections. See
-> [ROADMAP.md](ROADMAP.md) and the [improvement pack](docs/improvements/README.md).
+> [ROADMAP.md](https://github.com/Darkify19/filament-page-builder/blob/main/ROADMAP.md) and the
+> [improvement pack](https://github.com/Darkify19/filament-page-builder/blob/main/docs/improvements/README.md).
 
 ## Why
 
@@ -33,6 +42,8 @@ surfaces read and write the same JSON, so neither owns the content.
 - **Unknown block types are skipped, not fatal.** Content outlives schema changes.
 
 ## Installation
+
+Requires **PHP 8.3+** and **Filament 5.x**.
 
 ```bash
 composer require carljanzell/filament-page-builder
@@ -212,12 +223,16 @@ vendor/bin/pest
 The suite boots a real Filament panel under Testbench, with its own resource, canvas page
 and block fixtures.
 
-## Requirements
+## Contributing
 
-- PHP 8.3+
-- Filament 5.x
+Issues and pull requests are welcome on [GitHub](https://github.com/Darkify19/filament-page-builder).
+Work lands on `dev`, so open pull requests against `dev`, and run `vendor/bin/pest` and
+`composer lint` before you push.
+
+Report security problems privately, as
+[SECURITY.md](https://github.com/Darkify19/filament-page-builder/blob/main/SECURITY.md)
+describes, rather than in a public issue.
 
 ## Licence
 
-Proprietary — all rights reserved. The source is public for reference only; see
-[LICENSE](LICENSE). It is not open source, and no reuse rights are granted.
+The MIT licence. See [LICENSE](https://github.com/Darkify19/filament-page-builder/blob/main/LICENSE).
