@@ -5,6 +5,7 @@
         :data-workspace="workspace"
         :data-narrow="narrow ? 'true' : 'false'"
         :data-wide="wideInspector ? 'true' : 'false'"
+        data-fpb-i18n="{{ json_encode($this->canvasStrings(), JSON_UNESCAPED_UNICODE) }}"
         wire:key="fpb-{{ $this->getRecord()->getKey() }}"
     >
         <header class="fpb-chrome">
@@ -16,7 +17,7 @@
                 <h1 class="fpb-chrome-title">{{ $this->getRecordTitle() }}</h1>
 
                 @if ($this->selectionPath !== [])
-                    <nav class="fpb-crumbs" aria-label="Selected block">
+                    <nav class="fpb-crumbs" aria-label="{{ __('page-builder::chrome.aria_selected_block') }}">
                         @foreach ($this->selectionPath as $crumb)
                             <button
                                 type="button"
@@ -36,21 +37,21 @@
                 @endif
 
                 <span class="fpb-status" @class(['fpb-status-dirty' => $this->isDirty])>
-                    {{ $this->isDirty ? 'Draft not saved' : 'Saved' }}
+                    {{ $this->isDirty ? __('page-builder::chrome.draft_not_saved') : __('page-builder::chrome.saved') }}
                 </span>
                 <span class="fpb-notice" x-show="notice" x-text="notice" x-cloak role="status"></span>
             </div>
 
-            <div class="fpb-preview-toggle fpb-desktop-only" role="group" aria-label="Canvas width">
-                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'desktop'" :data-active="preview === 'desktop'" x-on:click="preview = 'desktop'">Desktop</button>
-                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'tablet'" :data-active="preview === 'tablet'" x-on:click="preview = 'tablet'">Tablet <span class="fpb-preview-px">768</span></button>
-                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'mobile'" :data-active="preview === 'mobile'" x-on:click="preview = 'mobile'">Mobile <span class="fpb-preview-px">390</span></button>
+            <div class="fpb-preview-toggle fpb-desktop-only" role="group" aria-label="{{ __('page-builder::chrome.aria_canvas_width') }}">
+                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'desktop'" :data-active="preview === 'desktop'" x-on:click="preview = 'desktop'">{{ __('page-builder::chrome.desktop') }}</button>
+                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'tablet'" :data-active="preview === 'tablet'" x-on:click="preview = 'tablet'">{{ __('page-builder::chrome.tablet') }} <span class="fpb-preview-px">768</span></button>
+                <button type="button" class="fpb-preview-btn" :aria-pressed="preview === 'mobile'" :data-active="preview === 'mobile'" x-on:click="preview = 'mobile'">{{ __('page-builder::chrome.mobile') }} <span class="fpb-preview-px">390</span></button>
             </div>
 
             <div class="fpb-toolbar-actions">
                 <x-filament::icon-button
                     icon="heroicon-m-arrow-uturn-left"
-                    label="Undo"
+                    :label="__('page-builder::chrome.undo')"
                     color="gray"
                     size="sm"
                     wire:click="undo"
@@ -59,7 +60,7 @@
 
                 <x-filament::icon-button
                     icon="heroicon-m-arrow-uturn-right"
-                    label="Redo"
+                    :label="__('page-builder::chrome.redo')"
                     color="gray"
                     size="sm"
                     wire:click="redo"
@@ -67,6 +68,13 @@
                 />
 
                 @if ($formEditorUrl = $this->formEditorUrl())
+                    {{-- Resolved before @js() on purpose. Livewire's morph-aware Blade
+                         precompiler balances parentheses across the whole template, and a
+                         nested __() inside @js() leaves it unbalanced, which makes the
+                         precompiler swallow the rest of the view and blow up its regex. --}}
+                    @php
+                        $formEditorColumnsWarning = __('page-builder::chrome.form_editor_columns_warning');
+                    @endphp
                     <span class="fpb-desktop-only">
                         @if ($this->hasNestedBlocks())
                             <x-filament::button
@@ -74,9 +82,9 @@
                                 href="{{ $formEditorUrl }}"
                                 color="gray"
                                 size="sm"
-                                x-on:click="if (! confirm('This page uses columns. The form view cannot show that layout correctly and may delete or duplicate content. Open anyway?')) { $event.preventDefault() }"
+                                x-on:click="if (! confirm(@js($formEditorColumnsWarning))) { $event.preventDefault() }"
                             >
-                                Form editor
+                                {{ __('page-builder::chrome.form_editor') }}
                             </x-filament::button>
                         @else
                             <x-filament::button
@@ -85,7 +93,7 @@
                                 color="gray"
                                 size="sm"
                             >
-                                Form editor
+                                {{ __('page-builder::chrome.form_editor') }}
                             </x-filament::button>
                         @endif
                     </span>
@@ -96,9 +104,9 @@
                     size="sm"
                     icon="heroicon-m-eye"
                     x-on:click="openPreview()"
-                    title="See the page as visitors will, unsaved changes included"
+                    :title="__('page-builder::chrome.preview_hint')"
                 >
-                    Preview
+                    {{ __('page-builder::chrome.preview') }}
                 </x-filament::button>
 
                 <x-filament::button
@@ -106,13 +114,13 @@
                     wire:loading.attr="disabled"
                     size="sm"
                 >
-                    Save layout
+                    {{ __('page-builder::chrome.save_layout') }}
                 </x-filament::button>
             </div>
         </header>
 
         <aside class="fpb-panel fpb-palette" x-show="!narrow || workspace === 'blocks'">
-            <div class="fpb-side-tabs" role="tablist" aria-label="Blocks and outline">
+            <div class="fpb-side-tabs" role="tablist" aria-label="{{ __('page-builder::chrome.aria_blocks_and_outline') }}">
                 <button
                     type="button"
                     role="tab"
@@ -122,7 +130,7 @@
                     :aria-selected="sideTab === 'blocks'"
                     :data-active="sideTab === 'blocks'"
                     x-on:click="sideTab = 'blocks'"
-                >Blocks</button>
+                >{{ __('page-builder::chrome.blocks') }}</button>
                 <button
                     type="button"
                     role="tab"
@@ -132,22 +140,30 @@
                     :aria-selected="sideTab === 'structure'"
                     :data-active="sideTab === 'structure'"
                     x-on:click="sideTab = 'structure'"
-                >Structure</button>
+                >{{ __('page-builder::chrome.structure') }}</button>
             </div>
 
             <div id="fpb-panel-blocks" role="tabpanel" aria-labelledby="fpb-tab-blocks" x-show="sideTab === 'blocks'">
+                {{-- The copy swaps with the selection once Alpine takes over, so both halves
+                     are translated here rather than leaving an English fallback behind.
+                     Held in variables instead of nested inside @js() for the same paren
+                     balancing reason noted on the form editor button. --}}
+                @php
+                    $paletteHintSelected = __('page-builder::chrome.palette_hint_selected');
+                    $paletteHintEmpty = __('page-builder::chrome.palette_hint_empty');
+                @endphp
                 <p class="fpb-panel-hint" x-text="$wire.selectedId
-                    ? 'Click to add after the selection, or drag onto a column.'
-                    : 'Click to add at the end of the page, or drag onto the canvas.'">
-                    Drag onto the page or into a column. Click to insert at the selection.
+                    ? @js($paletteHintSelected)
+                    : @js($paletteHintEmpty)">
+                    {{ __('page-builder::chrome.palette_hint_static') }}
                 </p>
 
                 <label class="fpb-search">
-                    <span class="sr-only">Search blocks</span>
+                    <span class="sr-only">{{ __('page-builder::chrome.search_blocks') }}</span>
                     <input
                         type="search"
                         class="fpb-search-input"
-                        placeholder="Search blocks"
+                        placeholder="{{ __('page-builder::chrome.search_blocks') }}"
                         x-ref="paletteSearch"
                         x-model="paletteQuery"
                     >
@@ -190,11 +206,11 @@
             </div>
 
             <div id="fpb-panel-structure" role="tabpanel" aria-labelledby="fpb-tab-structure" x-show="sideTab === 'structure'" x-cloak>
-                <h2 class="fpb-panel-title">Document</h2>
-                <p class="fpb-panel-hint">Click a block to select it. The outline follows the page.</p>
+                <h2 class="fpb-panel-title">{{ __('page-builder::chrome.document') }}</h2>
+                <p class="fpb-panel-hint">{{ __('page-builder::chrome.structure_hint') }}</p>
 
                 @if ($this->structure === [])
-                    <p class="fpb-panel-hint">This page has no blocks yet.</p>
+                    <p class="fpb-panel-hint">{{ __('page-builder::chrome.no_blocks_yet') }}</p>
                 @else
                     <ol class="fpb-structure">
                         @foreach ($this->structure as $node)
@@ -205,14 +221,14 @@
 
                 @if ($this->ghosts !== [])
                     <div class="fpb-ghosts">
-                        <h3 class="fpb-palette-group">Hidden ({{ count($this->ghosts) }})</h3>
-                        <p class="fpb-panel-hint">Stored on the page but not shown — an orphaned parent or a removed column.</p>
+                        <h3 class="fpb-palette-group">{{ __('page-builder::chrome.hidden', ['count' => count($this->ghosts)]) }}</h3>
+                        <p class="fpb-panel-hint">{{ __('page-builder::chrome.ghosts_hint') }}</p>
                         <ul class="fpb-ghost-list">
                             @foreach ($this->ghosts as $ghost)
                                 <li>
                                     <span>{{ $ghost['label'] }}</span>
                                     <button type="button" class="fpb-ghost-reveal" wire:click="revealGhost('{{ $ghost['id'] }}')" x-on:click="afterRevealOnCanvas()">
-                                        {{ $ghost['reason'] === 'orphan' ? 'Move to page' : 'Move to last column' }}
+                                        {{ $ghost['reason'] === 'orphan' ? __('page-builder::chrome.ghost_orphan') : __('page-builder::chrome.ghost_hidden_slot') }}
                                     </button>
                                 </li>
                             @endforeach
@@ -222,16 +238,16 @@
             </div>
 
             <dl class="fpb-shortcuts fpb-desktop-only">
-                <dt x-text="isMac ? '⌘S' : 'Ctrl+S'">Ctrl+S</dt><dd>Save</dd>
-                <dt x-text="isMac ? '⌘Z' : 'Ctrl+Z'">Ctrl+Z</dt><dd>Undo</dd>
-                <dt x-text="isMac ? '⇧⌘Z' : 'Ctrl+Shift+Z'">Ctrl+Shift+Z</dt><dd>Redo</dd>
-                <dt x-text="isMac ? '⌘C ⌘V' : 'Ctrl+C Ctrl+V'">Ctrl+C Ctrl+V</dt><dd>Copy, paste</dd>
-                <dt x-text="isMac ? '⌘D' : 'Ctrl+D'">Ctrl+D</dt><dd>Duplicate</dd>
-                <dt>⇧↑ ⇧↓</dt><dd>Move block</dd>
-                <dt>↑ ↓</dt><dd>Select</dd>
-                <dt>⌫</dt><dd>Delete</dd>
-                <dt>Esc</dt><dd>Deselect</dd>
-                <dt>Right-click</dt><dd>More actions</dd>
+                <dt x-text="isMac ? '⌘S' : 'Ctrl+S'">Ctrl+S</dt><dd>{{ __('page-builder::chrome.shortcut_save') }}</dd>
+                <dt x-text="isMac ? '⌘Z' : 'Ctrl+Z'">Ctrl+Z</dt><dd>{{ __('page-builder::chrome.shortcut_undo') }}</dd>
+                <dt x-text="isMac ? '⇧⌘Z' : 'Ctrl+Shift+Z'">Ctrl+Shift+Z</dt><dd>{{ __('page-builder::chrome.shortcut_redo') }}</dd>
+                <dt x-text="isMac ? '⌘C ⌘V' : 'Ctrl+C Ctrl+V'">Ctrl+C Ctrl+V</dt><dd>{{ __('page-builder::chrome.shortcut_copy_paste') }}</dd>
+                <dt x-text="isMac ? '⌘D' : 'Ctrl+D'">Ctrl+D</dt><dd>{{ __('page-builder::chrome.shortcut_duplicate') }}</dd>
+                <dt>⇧↑ ⇧↓</dt><dd>{{ __('page-builder::chrome.shortcut_move') }}</dd>
+                <dt>↑ ↓</dt><dd>{{ __('page-builder::chrome.shortcut_select') }}</dd>
+                <dt>⌫</dt><dd>{{ __('page-builder::chrome.shortcut_delete') }}</dd>
+                <dt>Esc</dt><dd>{{ __('page-builder::chrome.shortcut_deselect') }}</dd>
+                <dt>Right-click</dt><dd>{{ __('page-builder::chrome.shortcut_more_actions') }}</dd>
             </dl>
         </aside>
 
@@ -252,10 +268,10 @@
                         <x-page-builder::canvas-block :block="$block" :selected-id="$this->selectedId" />
                     @empty
                         <div class="fpb-empty">
-                            <p class="fpb-empty-title">Start a layout</p>
+                            <p class="fpb-empty-title">{{ __('page-builder::chrome.start_layout') }}</p>
                             <p class="fpb-empty-copy">
-                                <span class="fpb-empty-copy-wide">Add a row of columns, or drop a block from the left.</span>
-                                <span class="fpb-empty-copy-narrow">Add a row of columns, or tap Blocks to pick one.</span>
+                                <span class="fpb-empty-copy-wide">{{ __('page-builder::chrome.empty_wide') }}</span>
+                                <span class="fpb-empty-copy-narrow">{{ __('page-builder::chrome.empty_narrow') }}</span>
                             </p>
                             <div class="fpb-empty-actions">
                                 @foreach (array_slice($this->palette, 0, 3) as $item)
@@ -263,7 +279,7 @@
                                         type="button"
                                         class="fpb-empty-btn"
                                         x-on:click="insertFromPalette('{{ $item['type'] }}')"
-                                    >Add {{ $item['label'] }}</button>
+                                    >{{ __('page-builder::chrome.add_block', ['label' => $item['label']]) }}</button>
                                 @endforeach
                             </div>
                         </div>
@@ -297,32 +313,36 @@
                         <h2 class="fpb-panel-title">{{ $selected['label'] }}</h2>
                         @if ($selected['parentId'])
                             <button type="button" class="fpb-inspector-parent" wire:click="selectBlock('{{ $selected['parentId'] }}')">
-                                ↑ Inside {{ $selected['parentLabel'] }}
+                                {{ __('page-builder::chrome.inside', ['parent' => $selected['parentLabel']]) }}
                             </button>
                         @elseif ($selected['description'])
                             <p class="fpb-inspector-desc">{{ $selected['description'] }}</p>
                         @endif
                     </div>
                     <div class="fpb-inspector-actions">
+                        @php
+                            $inspectorNarrower = __('page-builder::chrome.narrower');
+                            $inspectorWider = __('page-builder::chrome.wider');
+                        @endphp
                         <button
                             type="button"
                             class="fpb-icon-btn fpb-desktop-only"
                             x-on:click="wideInspector = ! wideInspector"
                             :aria-pressed="wideInspector ? 'true' : 'false'"
-                            :title="wideInspector ? 'Make the panel narrower' : 'Make the panel wider'"
+                            :title="wideInspector ? @js($inspectorNarrower) : @js($inspectorWider)"
                         >
                             <x-filament::icon icon="heroicon-m-arrows-right-left" class="fpb-icon" />
                         </button>
-                        <button type="button" class="fpb-icon-btn" wire:click="selectBlock(null)" title="Close (Esc)">
+                        <button type="button" class="fpb-icon-btn" wire:click="selectBlock(null)" title="{{ __('page-builder::chrome.close') }}">
                             <x-filament::icon icon="heroicon-m-x-mark" class="fpb-icon" />
                         </button>
                     </div>
                 </header>
 
-                <div class="fpb-inspector-tabs" role="tablist" aria-label="Block inspector">
-                    <button type="button" role="tab" id="fpb-tab-content" class="fpb-side-tab" aria-controls="fpb-panel-content" :aria-selected="inspectorTab === 'content'" :data-active="inspectorTab === 'content'" x-on:click="inspectorTab = 'content'">Content</button>
-                    <button type="button" role="tab" id="fpb-tab-style" class="fpb-side-tab" aria-controls="fpb-panel-style" :aria-selected="inspectorTab === 'style'" :data-active="inspectorTab === 'style'" x-on:click="inspectorTab = 'style'">Style</button>
-                    <button type="button" role="tab" id="fpb-tab-layout" class="fpb-side-tab" aria-controls="fpb-panel-layout" :aria-selected="inspectorTab === 'layout'" :data-active="inspectorTab === 'layout'" x-on:click="inspectorTab = 'layout'">Layout</button>
+                <div class="fpb-inspector-tabs" role="tablist" aria-label="{{ __('page-builder::chrome.aria_block_inspector') }}">
+                    <button type="button" role="tab" id="fpb-tab-content" class="fpb-side-tab" aria-controls="fpb-panel-content" :aria-selected="inspectorTab === 'content'" :data-active="inspectorTab === 'content'" x-on:click="inspectorTab = 'content'">{{ __('page-builder::chrome.content') }}</button>
+                    <button type="button" role="tab" id="fpb-tab-style" class="fpb-side-tab" aria-controls="fpb-panel-style" :aria-selected="inspectorTab === 'style'" :data-active="inspectorTab === 'style'" x-on:click="inspectorTab = 'style'">{{ __('page-builder::chrome.style') }}</button>
+                    <button type="button" role="tab" id="fpb-tab-layout" class="fpb-side-tab" aria-controls="fpb-panel-layout" :aria-selected="inspectorTab === 'layout'" :data-active="inspectorTab === 'layout'" x-on:click="inspectorTab = 'layout'">{{ __('page-builder::chrome.layout') }}</button>
                 </div>
 
                 <div id="fpb-panel-content" role="tabpanel" aria-labelledby="fpb-tab-content" x-show="inspectorTab === 'content'">
@@ -330,13 +350,11 @@
                         {{ $this->form }}
                     @elseif (! $this->isSelectedBlockKnown())
                         <p class="fpb-panel-hint">
-                            This block's type is no longer registered, so there are no fields to show.
-                            Its stored content is preserved. You can still move or remove it.
+                            {{ __('page-builder::chrome.unregistered_hint') }}
                         </p>
                     @else
                         <p class="fpb-panel-hint">
-                            You do not have permission to edit this block's content. You can still
-                            move or remove it.
+                            {{ __('page-builder::chrome.no_permission_hint') }}
                         </p>
                     @endif
                 </div>
@@ -345,13 +363,13 @@
                     @if ($this->isSelectedBlockEditable() && $this->hasCustomStyles())
                         {{ $this->styleForm }}
                     @elseif (! $this->isSelectedBlockEditable())
-                        <p class="fpb-panel-hint">Only people who may edit this block can restyle it.</p>
+                        <p class="fpb-panel-hint">{{ __('page-builder::chrome.style_permission_hint') }}</p>
                     @endif
 
                     @if ($this->styleTokens() !== [])
                         <details class="fpb-presets" @if (! $this->hasCustomStyles()) open @endif>
-                            <summary>Brand presets</summary>
-                            <p class="fpb-panel-hint">Spacing and colours from your organisation's style guide.</p>
+                            <summary>{{ __('page-builder::chrome.brand_presets') }}</summary>
+                            <p class="fpb-panel-hint">{{ __('page-builder::chrome.brand_presets_hint') }}</p>
 
                             @foreach ($this->styleTokens() as $token => $options)
                                 <fieldset class="fpb-style-field">
@@ -362,7 +380,7 @@
                                             class="fpb-token-pick"
                                             @if (($this->blockSettings[$token] ?? '') === '') data-active="true" @endif
                                             wire:click="$set('blockSettings.{{ $token }}', '')"
-                                        >Default</button>
+                                        >{{ __('page-builder::chrome.default') }}</button>
                                         @foreach ($options as $value => $label)
                                             @php
                                                 $stored = is_int($value) ? $label : $value;
@@ -387,22 +405,22 @@
                     @endif
 
                     <label class="fpb-style-field fpb-anchor-field">
-                        <span>Anchor</span>
+                        <span>{{ __('page-builder::chrome.anchor') }}</span>
                         <input
                             type="text"
                             class="fpb-search-input"
                             wire:model.blur="blockAnchor"
-                            placeholder="intro"
+                            placeholder="{{ __('page-builder::chrome.anchor_example') }}"
                             autocomplete="off"
                         >
-                        <small class="fpb-panel-hint">Link to this block with <code>#intro</code>.</small>
+                        <small class="fpb-panel-hint">{{ __('page-builder::chrome.anchor_hint', ['anchor' => '<code>'.e(__('page-builder::chrome.anchor_example')).'</code>']) }}</small>
                     </label>
                 </div>
             @else
-                <h2 class="fpb-panel-title">Nothing selected</h2>
+                <h2 class="fpb-panel-title">{{ __('page-builder::chrome.nothing_selected') }}</h2>
                 <p class="fpb-panel-hint">
-                    <span class="fpb-empty-copy-wide">Click a block on the page to edit its content, style and layout. Right-click for more.</span>
-                    <span class="fpb-empty-copy-narrow">Select a block on the Page tab, then come back here to edit it.</span>
+                    <span class="fpb-empty-copy-wide">{{ __('page-builder::chrome.inspector_empty_wide') }}</span>
+                    <span class="fpb-empty-copy-narrow">{{ __('page-builder::chrome.inspector_empty_narrow') }}</span>
                 </p>
             @endif
         </aside>
@@ -413,10 +431,10 @@
             x-show="narrow && workspace === 'canvas'"
             x-cloak
             x-on:click="showWorkspace('blocks')"
-            aria-label="Add a block"
+            aria-label="{{ __('page-builder::chrome.aria_add_block') }}"
         >+</button>
 
-        <nav class="fpb-dock" x-show="narrow" x-cloak role="tablist" aria-label="Design workspace">
+        <nav class="fpb-dock" x-show="narrow" x-cloak role="tablist" aria-label="{{ __('page-builder::chrome.aria_design_workspace') }}">
             <button
                 type="button"
                 role="tab"
@@ -424,7 +442,7 @@
                 :aria-selected="workspace === 'blocks'"
                 :data-active="workspace === 'blocks'"
                 x-on:click="showWorkspace('blocks')"
-            >Blocks</button>
+            >{{ __('page-builder::chrome.blocks') }}</button>
             <button
                 type="button"
                 role="tab"
@@ -432,7 +450,7 @@
                 :aria-selected="workspace === 'canvas'"
                 :data-active="workspace === 'canvas'"
                 x-on:click="showWorkspace('canvas')"
-            >Page</button>
+            >{{ __('page-builder::chrome.page') }}</button>
             <button
                 type="button"
                 role="tab"
@@ -441,7 +459,7 @@
                 :data-active="workspace === 'settings'"
                 x-on:click="showWorkspace('settings')"
             >
-                Settings
+                {{ __('page-builder::chrome.settings') }}
                 <span class="fpb-dock-dot" x-show="$wire.selectedId" x-cloak aria-hidden="true"></span>
             </button>
         </nav>
@@ -454,47 +472,47 @@
             x-cloak
             wire:ignore
             role="menu"
-            aria-label="Block actions"
+            aria-label="{{ __('page-builder::chrome.aria_block_actions') }}"
             :style="`left: ${menu.x}px; top: ${menu.y}px`"
             x-on:click.outside="closeMenu()"
             x-on:contextmenu.prevent
         >
             <p class="fpb-menu-title" x-text="menu.label"></p>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuInspect('content')"><span>Edit content</span></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuInspect('style')"><span>Style</span></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuInspect('layout')"><span>Spacing and size</span></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-show="menu.parent" x-on:click="menuSelectParent()"><span>Select parent</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuInspect('content')"><span>{{ __('page-builder::chrome.edit_content') }}</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuInspect('style')"><span>{{ __('page-builder::chrome.style') }}</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuInspect('layout')"><span>{{ __('page-builder::chrome.spacing_and_size') }}</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-show="menu.parent" x-on:click="menuSelectParent()"><span>{{ __('page-builder::chrome.select_parent') }}</span></button>
             <hr class="fpb-menu-sep">
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuCopy()"><span>Copy</span><kbd x-text="keys('C')"></kbd></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" :disabled="! clipboard" x-on:click="menuPaste('after')"><span>Paste after</span><kbd x-text="keys('V')"></kbd></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-show="menu.container" :disabled="! clipboard" x-on:click="menuPaste('inside')"><span>Paste inside</span></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuCopyStyle()"><span>Copy style</span></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" :disabled="! styleClipboard" x-on:click="menuPasteStyle()"><span>Paste style</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuCopy()"><span>{{ __('page-builder::chrome.copy') }}</span><kbd x-text="keys('C')"></kbd></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" :disabled="! clipboard" x-on:click="menuPaste('after')"><span>{{ __('page-builder::chrome.paste_after') }}</span><kbd x-text="keys('V')"></kbd></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-show="menu.container" :disabled="! clipboard" x-on:click="menuPaste('inside')"><span>{{ __('page-builder::chrome.paste_inside') }}</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuCopyStyle()"><span>{{ __('page-builder::chrome.copy_style') }}</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" :disabled="! styleClipboard" x-on:click="menuPasteStyle()"><span>{{ __('page-builder::chrome.paste_style') }}</span></button>
             <hr class="fpb-menu-sep">
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuAddBelow()"><span>Add a block below…</span></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuDuplicate()"><span>Duplicate</span><kbd x-text="keys('D')"></kbd></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuMove(-1)"><span>Move up</span><kbd>⇧↑</kbd></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuMove(1)"><span>Move down</span><kbd>⇧↓</kbd></button>
-            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuResetStyle()"><span>Reset style</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuAddBelow()"><span>{{ __('page-builder::chrome.add_block_below') }}</span></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuDuplicate()"><span>{{ __('page-builder::chrome.duplicate') }}</span><kbd x-text="keys('D')"></kbd></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuMove(-1)"><span>{{ __('page-builder::chrome.move_up') }}</span><kbd>⇧↑</kbd></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuMove(1)"><span>{{ __('page-builder::chrome.move_down') }}</span><kbd>⇧↓</kbd></button>
+            <button type="button" role="menuitem" class="fpb-menu-item" x-on:click="menuResetStyle()"><span>{{ __('page-builder::chrome.reset_style') }}</span></button>
             <hr class="fpb-menu-sep">
-            <button type="button" role="menuitem" class="fpb-menu-item fpb-menu-danger" x-on:click="menuDelete()"><span>Delete</span><kbd>⌫</kbd></button>
+            <button type="button" role="menuitem" class="fpb-menu-item fpb-menu-danger" x-on:click="menuDelete()"><span>{{ __('page-builder::chrome.delete') }}</span><kbd>⌫</kbd></button>
         </div>
 
         {{-- Preview: the unsaved page, rendered for visitors, at a real width. --}}
-        <div class="fpb-preview" x-show="previewing" x-cloak wire:ignore role="dialog" aria-modal="true" aria-label="Page preview">
+        <div class="fpb-preview" x-show="previewing" x-cloak wire:ignore role="dialog" aria-modal="true" aria-label="{{ __('page-builder::chrome.aria_page_preview') }}">
             <header class="fpb-preview-bar">
                 <div class="fpb-preview-heading">
-                    <strong>Preview</strong>
-                    <span class="fpb-preview-note">Unsaved changes included. Links, video and custom code are live.</span>
+                    <strong>{{ __('page-builder::chrome.preview') }}</strong>
+                    <span class="fpb-preview-note">{{ __('page-builder::chrome.preview_note') }}</span>
                 </div>
-                <div class="fpb-preview-toggle" role="group" aria-label="Preview width">
-                    <button type="button" class="fpb-preview-btn" :data-active="previewDevice === 'desktop'" x-on:click="previewDevice = 'desktop'">Desktop</button>
-                    <button type="button" class="fpb-preview-btn" :data-active="previewDevice === 'tablet'" x-on:click="previewDevice = 'tablet'">Tablet <span class="fpb-preview-px">768</span></button>
-                    <button type="button" class="fpb-preview-btn" :data-active="previewDevice === 'mobile'" x-on:click="previewDevice = 'mobile'">Mobile <span class="fpb-preview-px">390</span></button>
+                <div class="fpb-preview-toggle" role="group" aria-label="{{ __('page-builder::chrome.preview_width') }}">
+                    <button type="button" class="fpb-preview-btn" :data-active="previewDevice === 'desktop'" x-on:click="previewDevice = 'desktop'">{{ __('page-builder::chrome.desktop') }}</button>
+                    <button type="button" class="fpb-preview-btn" :data-active="previewDevice === 'tablet'" x-on:click="previewDevice = 'tablet'">{{ __('page-builder::chrome.tablet') }} <span class="fpb-preview-px">768</span></button>
+                    <button type="button" class="fpb-preview-btn" :data-active="previewDevice === 'mobile'" x-on:click="previewDevice = 'mobile'">{{ __('page-builder::chrome.mobile') }} <span class="fpb-preview-px">390</span></button>
                 </div>
                 <div class="fpb-preview-actions">
-                    <button type="button" class="fpb-preview-btn" x-on:click="refreshPreview()">Refresh</button>
-                    <button type="button" class="fpb-preview-close" x-on:click="closePreview()">Back to editing <kbd>Esc</kbd></button>
+                    <button type="button" class="fpb-preview-btn" x-on:click="refreshPreview()">{{ __('page-builder::chrome.refresh') }}</button>
+                    <button type="button" class="fpb-preview-close" x-on:click="closePreview()">{{ __('page-builder::chrome.back_to_editing') }} <kbd>Esc</kbd></button>
                 </div>
             </header>
             <div class="fpb-preview-stage">
@@ -502,10 +520,10 @@
                     class="fpb-preview-frame"
                     x-ref="previewFrame"
                     :data-device="previewDevice"
-                    title="Page preview"
+                    title="{{ __('page-builder::chrome.aria_page_preview') }}"
                     sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation allow-modals"
                 ></iframe>
-                <p class="fpb-preview-loading" x-show="previewLoading">Rendering the page…</p>
+                <p class="fpb-preview-loading" x-show="previewLoading">{{ __('page-builder::chrome.rendering') }}</p>
             </div>
         </div>
     </div>

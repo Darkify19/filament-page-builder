@@ -40,6 +40,27 @@ class EmbedBlock implements PageBlock
         '21-9' => '21:9 (cinema)',
     ];
 
+    /**
+     * RATIOS, translated.
+     *
+     * Only the three keys that name a shape are localised. The others are aspect ratios:
+     * `4:3` is the same number in every language, and a translator turning it into a word
+     * would change what the aspect-ratio attribute means.
+     *
+     * @return array<string, string>
+     */
+    public static function ratios(): array
+    {
+        return [
+            '16-9' => __('page-builder::blocks.embed.ratio_video'),
+            '4-3' => '4:3',
+            '1-1' => __('page-builder::blocks.embed.ratio_square'),
+            '3-4' => __('page-builder::blocks.embed.ratio_form'),
+            '9-16' => __('page-builder::blocks.embed.ratio_vertical'),
+            '21-9' => __('page-builder::blocks.embed.ratio_cinema'),
+        ];
+    }
+
     public static function type(): string
     {
         return 'embed';
@@ -47,7 +68,7 @@ class EmbedBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'Embed';
+        return __('page-builder::blocks.embed.label');
     }
 
     public static function icon(): ?string
@@ -62,7 +83,7 @@ class EmbedBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'YouTube, Vimeo, Maps, Google Forms and Slides, Spotify, Canva…';
+        return __('page-builder::blocks.embed.description');
     }
 
     public static function view(): string
@@ -124,10 +145,10 @@ class EmbedBlock implements PageBlock
     {
         return [
             Textarea::make('url')
-                ->label('Link or embed code')
+                ->label(__('page-builder::blocks.embed.url'))
                 ->rows(2)
-                ->placeholder('https://www.youtube.com/watch?v=…')
-                ->helperText('Paste the page address, a share link, or the whole embed code.')
+                ->placeholder(__('page-builder::blocks.embed.url_placeholder'))
+                ->helperText(__('page-builder::blocks.embed.url_hint'))
                 ->maxLength(4096)
                 ->live(onBlur: true)
                 ->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
@@ -139,36 +160,36 @@ class EmbedBlock implements PageBlock
                 ->visible(fn (Get $get): bool => self::isPlayable($get('url')))
                 ->schema([
                     TextInput::make('start')
-                        ->label('Start at')
+                        ->label(__('page-builder::blocks.common.start_at'))
                         ->placeholder('0:00')
-                        ->helperText('Seconds or m:ss')
+                        ->helperText(__('page-builder::blocks.common.time_hint'))
                         ->rule(fn (): Closure => VideoBlock::timeRule()),
                     TextInput::make('end')
-                        ->label('Stop at')
-                        ->placeholder('End')
+                        ->label(__('page-builder::blocks.common.stop_at'))
+                        ->placeholder(__('page-builder::blocks.common.end_placeholder'))
                         ->rule(fn (): Closure => VideoBlock::timeRule()),
-                    Toggle::make('autoplay')->label('Autoplay')->helperText('Plays muted'),
-                    Toggle::make('loop')->label('Loop'),
-                    Toggle::make('mute')->label('Muted'),
-                    Toggle::make('hide_controls')->label('Hide controls'),
+                    Toggle::make('autoplay')->label(__('page-builder::blocks.common.autoplay'))->helperText(__('page-builder::blocks.common.autoplay_hint')),
+                    Toggle::make('loop')->label(__('page-builder::blocks.common.loop')),
+                    Toggle::make('mute')->label(__('page-builder::blocks.common.muted')),
+                    Toggle::make('hide_controls')->label(__('page-builder::blocks.embed.hide_controls')),
                 ]),
             Grid::make(2)->schema([
                 Select::make('ratio')
-                    ->label('Shape')
-                    ->options(self::RATIOS)
-                    ->placeholder('16:9 (video)'),
+                    ->label(__('page-builder::blocks.common.shape'))
+                    ->options(self::ratios())
+                    ->placeholder(__('page-builder::blocks.embed.ratio_video')),
                 TextInput::make('height')
-                    ->label('Fixed height')
+                    ->label(__('page-builder::blocks.embed.fixed_height'))
                     ->numeric()
                     ->minValue(80)
                     ->maxValue(2000)
                     ->suffix('px')
-                    ->placeholder('Auto'),
+                    ->placeholder(__('page-builder::blocks.common.auto')),
             ]),
             TextInput::make('title')
-                ->label('Title for screen readers')
+                ->label(__('page-builder::blocks.embed.title'))
                 ->maxLength(255)
-                ->placeholder('Embedded content'),
+                ->placeholder(__('page-builder::blocks.embed.title_placeholder')),
         ];
     }
 }

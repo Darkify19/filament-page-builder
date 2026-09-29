@@ -297,3 +297,40 @@ it('drops an entry with no type at all', function (): void {
 
     expect(ids($canvas))->toBe(['a']);
 });
+
+/* ── Translation ───────────────────────────────────────── */
+
+it('renders the editor chrome in the application locale', function (): void {
+    app()->setLocale('de');
+
+    canvas(page())
+        ->assertSee('Layout speichern')
+        ->assertDontSee('Save layout');
+});
+
+it('hands the canvas a JSON payload of translated strings for the script', function (): void {
+    app()->setLocale('tr');
+
+    $html = canvas(page())->html();
+
+    preg_match('/data-fpb-i18n="([^"]*)"/', $html, $matches);
+
+    expect($matches)->not->toBeEmpty('the canvas root must carry data-fpb-i18n for page-builder.js');
+
+    $strings = json_decode(html_entity_decode($matches[1], ENT_QUOTES, 'UTF-8'), true);
+
+    expect($strings)->toBeArray()
+        ->and($strings['confirm_delete'])->toBe('Bu blok silinsin mi? İçeriği de silinir.');
+
+    // The script falls back to the key when a string is absent, so a gap here is a silent
+    // English leak in every other locale. Compare against the group the page hands over.
+    expect(array_keys($strings))->toBe(array_keys(__('page-builder::js')));
+});
+
+it('names blocks in the editor language on the canvas bar', function (): void {
+    app()->setLocale('de');
+
+    canvas(page([block('a')]))
+        ->assertSeeHtml('aria-label="Überschrift bearbeiten"')
+        ->assertSeeHtml('aria-label="Überschrift nach oben"');
+});
