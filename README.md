@@ -3,7 +3,7 @@
 A drag-and-drop visual page builder for [Filament](https://filamentphp.com), storing page
 content as an ordered array of typed blocks in a single JSON column.
 
-**📖 [Documentation](https://carljanzell.github.io/filament-page-builder/)**
+**📖 [Documentation](https://darkify19.github.io/filament-page-builder/)**
 
 > **Status: the canvas is a nested layout editor.** Palette with layout
 > primitives (including Embed), drag into columns, a document outline, token style
