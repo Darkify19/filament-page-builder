@@ -3,13 +3,20 @@
 namespace CarlJanzell\FilamentPageBuilder;
 
 use CarlJanzell\FilamentPageBuilder\Blocks\ButtonBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\CodeBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\DividerBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\EmbedBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\HeadingBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\ImageBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\ListBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\QuoteBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\SectionBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\ShortcodeBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\SpacerBlock;
 use CarlJanzell\FilamentPageBuilder\Blocks\TextBlock;
+use CarlJanzell\FilamentPageBuilder\Blocks\VideoBlock;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
+use Closure;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Throwable;
@@ -37,6 +44,20 @@ class FilamentPageBuilderPlugin implements Plugin
     protected array $styleTokens = [];
 
     protected ?string $panelId = null;
+
+    protected bool|Closure $allowCode = false;
+
+    protected bool $customStyles = true;
+
+    /**
+     * @var array<string, array{callback: callable, description: ?string, example: ?string}>
+     */
+    protected array $shortcodes = [];
+
+    /**
+     * @var array<int, string>
+     */
+    protected array $embedHosts = [];
 
     public static function make(): static
     {
@@ -127,11 +148,84 @@ class FilamentPageBuilderPlugin implements Plugin
     }
 
     /**
+     * Who may add and edit Custom code blocks (HTML, CSS and JavaScript).
+     *
+     * Off by default. A code block's script runs on the public page with the visitor's
+     * full trust — on the same origin as this panel — so opening it to every editor is
+     * the application's decision to make, not the package's. Pass a closure to decide per
+     * request, typically a role check. Existing code blocks keep rendering either way.
+     */
+    public function allowCode(bool|Closure $condition = true): static
+    {
+        $this->allowCode = $condition;
+
+        return $this;
+    }
+
+    public function canUseCode(): bool
+    {
+        return (bool) value($this->allowCode);
+    }
+
+    /**
+     * Whether the inspector offers free-form styles (spacing, colour, background, size)
+     * beside the token presets. On by default; pass false to keep editors to the tokens.
+     */
+    public function customStyles(bool $enabled = true): static
+    {
+        $this->customStyles = $enabled;
+
+        return $this;
+    }
+
+    public function hasCustomStyles(): bool
+    {
+        return $this->customStyles;
+    }
+
+    /**
+     * Register a `[name]` shortcode that pages on this panel can call.
+     *
+     * The callback receives the shortcode's attributes (`[news count="3"]` →
+     * `['count' => '3']`) and the enclosed content of `[name]…[/name]`, and returns
+     * markup: a string, an Htmlable or a View. Its output is trusted, so escape anything
+     * it echoes back from `$attributes`.
+     *
+     * @param  callable(array<int|string, string>, ?string): mixed  $callback
+     */
+    public function shortcode(string $name, callable $callback, ?string $description = null, ?string $example = null): static
+    {
+        $this->shortcodes[$name] = [
+            'callback' => $callback,
+            'description' => $description,
+            'example' => $example,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Extra hosts the Embed block may frame, on top of the shipped allowlist.
+     *
+     * A host allows its subdomains too. Each one is a site you are letting run inside
+     * your pages, so list only the ones you mean.
+     *
+     * @param  array<int, string>  $hosts
+     */
+    public function embedHosts(array $hosts): static
+    {
+        $this->embedHosts = [...$this->embedHosts, ...$hosts];
+
+        return $this;
+    }
+
+    /**
      * Token sets the style inspector offers.
      *
      * Values are stored as names, not CSS, and emitted as `data-fpb-{token}` on the
-     * block wrapper. An editor cannot produce a 13px lime heading because the knobs
-     * are this list, not a colour picker.
+     * block wrapper. These are the brand presets: an editor picking from them cannot
+     * produce a 13px lime heading. Exact values — pixels, a colour from a picker — live
+     * in the separate custom style layer, which `customStyles(false)` turns off.
      *
      * @param  array<string, array<int|string, string>>  $tokens
      */
@@ -192,12 +286,18 @@ class FilamentPageBuilderPlugin implements Plugin
     {
         return [
             SectionBlock::class,
+            HeadingBlock::class,
             TextBlock::class,
+            ListBlock::class,
+            QuoteBlock::class,
             ImageBlock::class,
             ButtonBlock::class,
+            VideoBlock::class,
             EmbedBlock::class,
             SpacerBlock::class,
             DividerBlock::class,
+            ShortcodeBlock::class,
+            CodeBlock::class,
         ];
     }
 
@@ -250,7 +350,26 @@ class FilamentPageBuilderPlugin implements Plugin
             ? [...static::layoutBlockClasses(), ...$this->blocks]
             : $this->blocks;
 
-        $this->getRegistry()->register($blocks);
+        $registry = $this->getRegistry()->register($blocks);
+
+        $registry->allowEmbedHosts($this->embedHosts);
+
+        $shortcodes = $registry->shortcodes();
+
+        if ($this->includeLayoutBlocks) {
+            $shortcodes
+                ->register('year', fn (): string => date('Y'), 'The current year.', '[year]')
+                ->register(
+                    'date',
+                    fn (array $attributes): string => e(now()->format(is_string($attributes['format'] ?? null) ? $attributes['format'] : 'F j, Y')),
+                    "Today's date. Optional format, as PHP writes dates.",
+                    '[date format="F j, Y"]',
+                );
+        }
+
+        foreach ($this->shortcodes as $name => $shortcode) {
+            $shortcodes->register($name, $shortcode['callback'], $shortcode['description'], $shortcode['example']);
+        }
     }
 
     public function boot(Panel $panel): void

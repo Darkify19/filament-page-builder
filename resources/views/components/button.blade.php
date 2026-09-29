@@ -8,4 +8,4 @@
     class="fpb-button"
     href="{{ $href }}"
     @editable('label')
->{{ $data['label'] ?? '' }}</a>
+>{!! \CarlJanzell\FilamentPageBuilder\PageBuilder::text($data['label'] ?? '') !!}</a>

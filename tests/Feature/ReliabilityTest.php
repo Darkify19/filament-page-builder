@@ -186,7 +186,7 @@ it('renders an allowlisted embed and skips anything else', function (): void {
     ])->render();
 
     expect($ok)->toContain('<iframe')
-        ->and($ok)->toContain('youtube.com/embed')
+        ->and($ok)->toContain('youtube-nocookie.com/embed/dQw4w9WgXcQ')
         ->and($no)->not->toContain('<iframe')
         ->and($no)->toContain('Paste a YouTube');
 });

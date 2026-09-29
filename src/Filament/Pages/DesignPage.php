@@ -4,6 +4,10 @@ namespace CarlJanzell\FilamentPageBuilder\Filament\Pages;
 
 use CarlJanzell\FilamentPageBuilder\BlockRegistry;
 use CarlJanzell\FilamentPageBuilder\Editable;
+use CarlJanzell\FilamentPageBuilder\Filament\Pages\Concerns\EditsBlockStyle;
+use CarlJanzell\FilamentPageBuilder\Filament\Pages\Concerns\PreviewsPage;
+use CarlJanzell\FilamentPageBuilder\Filament\Pages\Concerns\ResizesBlocks;
+use CarlJanzell\FilamentPageBuilder\Filament\Pages\Concerns\UsesClipboard;
 use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
 use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Support\BlockHistory;
@@ -34,7 +38,11 @@ use Illuminate\Validation\ValidationException;
  */
 abstract class DesignPage extends Page
 {
+    use EditsBlockStyle;
     use InteractsWithRecord;
+    use PreviewsPage;
+    use ResizesBlocks;
+    use UsesClipboard;
 
     protected string $view = 'page-builder::design';
 
@@ -322,7 +330,9 @@ abstract class DesignPage extends Page
         $labels = [
             'layout' => 'Layout',
             'content' => 'Content',
+            'media' => 'Media',
             'design' => 'Design',
+            'developer' => 'Developer',
             'blocks' => 'Blocks',
         ];
 
@@ -396,6 +406,7 @@ abstract class DesignPage extends Page
             'view' => $definition === null ? null : $definition::view(),
             'label' => $definition === null ? $block['type'] : $definition::label(),
             'isKnown' => $definition !== null,
+            'isEditable' => $this->registry()->isVisible($block['type']),
             'hasContent' => $this->blockHasContent($block),
             'isContainer' => $slotNames !== [],
             'slotNames' => $slotNames,
@@ -569,10 +580,13 @@ abstract class DesignPage extends Page
         $this->syncDirty();
     }
 
-    public function insertBlock(string $type, ?int $at = null, ?string $parent = null, ?string $slot = null): void
+    /**
+     * Returns the new block's id, so the canvas can put the caret straight into it.
+     */
+    public function insertBlock(string $type, ?int $at = null, ?string $parent = null, ?string $slot = null): ?string
     {
         if (! $this->registry()->isVisible($type)) {
-            return;
+            return null;
         }
 
         $parent = $this->nullableString($parent);
@@ -600,7 +614,7 @@ abstract class DesignPage extends Page
         }
 
         if (! $this->canPlace($parent, $slot)) {
-            return;
+            return null;
         }
 
         $block = [
@@ -613,7 +627,7 @@ abstract class DesignPage extends Page
         $next = BlockTree::insert($this->blocks, $block, $at, $parent, $slot);
 
         if ($next === $this->blocks) {
-            return;
+            return null;
         }
 
         $this->remember();
@@ -621,6 +635,8 @@ abstract class DesignPage extends Page
         $this->syncDirty();
 
         $this->selectBlock($block['id']);
+
+        return $block['id'];
     }
 
     public function duplicateBlock(string $id): void
@@ -717,6 +733,7 @@ abstract class DesignPage extends Page
     {
         $this->commitSelectedBlock();
         $this->commitSelectedSettings();
+        $this->commitSelectedStyle();
         $this->commitSelectedAnchor();
 
         $this->selectedId = $id;
@@ -752,6 +769,53 @@ abstract class DesignPage extends Page
         $this->cacheSchema('form', null);
 
         $this->form->fill($this->blockData);
+
+        $this->fillStyleInspector();
+    }
+
+    /**
+     * Refill the content inspector from the stored data after a change made elsewhere
+     * (a drag, a resize), without committing what it held.
+     */
+    protected function refillContentInspector(): void
+    {
+        $index = $this->selectedId === null ? null : $this->indexOf($this->selectedId);
+
+        $this->blockData = $index === null ? [] : ($this->blocks[$index]['data'] ?? []);
+
+        $this->cacheSchema('form', null);
+
+        $this->form->fill($this->blockData);
+    }
+
+    /**
+     * What the inspector's header says about the selection: which element this is, and
+     * the way back up to the block that holds it.
+     *
+     * @return array{id: string, type: string, label: string, icon: ?string, description: ?string, parentId: ?string, parentLabel: ?string, isContainer: bool}|null
+     */
+    public function getSelectedBlockProperty(): ?array
+    {
+        $block = $this->selectedId === null ? null : BlockTree::find($this->blocks, $this->selectedId);
+
+        if ($block === null) {
+            return null;
+        }
+
+        $definition = $this->registry()->find($block['type']);
+        $parent = ($block['parent'] ?? null) === null ? null : BlockTree::find($this->blocks, $block['parent']);
+        $parentDefinition = $parent === null ? null : $this->registry()->find($parent['type']);
+
+        return [
+            'id' => $block['id'],
+            'type' => $block['type'],
+            'label' => $definition === null ? $block['type'] : $definition::label(),
+            'icon' => $definition === null ? null : $definition::icon(),
+            'description' => $this->registry()->description($block['type']),
+            'parentId' => $parent['id'] ?? null,
+            'parentLabel' => $parent === null ? null : ($parentDefinition === null ? $parent['type'] : $parentDefinition::label()),
+            'isContainer' => $this->registry()->isContainer($block['type']),
+        ];
     }
 
     /**
@@ -797,12 +861,36 @@ abstract class DesignPage extends Page
             }
         }
 
+        $data = $this->withoutNewEmptyFields($data, $stored);
+
         if ($data !== $stored) {
             $this->remember();
 
             $this->blocks[$index]['data'] = $data;
             $this->syncDirty();
         }
+    }
+
+    /**
+     * Drop fields the stored block never had and the form only reports as empty.
+     *
+     * A block type that gains a field (a section's new "Space between") hands every
+     * existing block a `null` for it, and a toggle a `false`. Committing those would make
+     * the page dirty, and record an undo step, merely because an old block was selected.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $stored
+     * @return array<string, mixed>
+     */
+    protected function withoutNewEmptyFields(array $data, array $stored): array
+    {
+        foreach ($data as $key => $value) {
+            if (! array_key_exists($key, $stored) && ($value === null || $value === false || $value === '' || $value === [])) {
+                unset($data[$key]);
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -1055,6 +1143,7 @@ abstract class DesignPage extends Page
     {
         $this->commitSelectedBlock();
         $this->commitSelectedSettings();
+        $this->commitSelectedStyle();
         $this->commitSelectedAnchor();
 
         /** @var Model $record */

@@ -5,6 +5,7 @@ namespace CarlJanzell\FilamentPageBuilder\Blocks;
 use CarlJanzell\FilamentPageBuilder\Contracts\Container;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Grid;
 
 /**
  * A row of columns that other blocks drop into.
@@ -16,6 +17,17 @@ use Filament\Forms\Components\Select;
  */
 class SectionBlock implements Container, PageBlock
 {
+    /**
+     * @var array<string, string>
+     */
+    public const GAPS = [
+        'none' => 'None',
+        'sm' => 'Small',
+        'md' => 'Medium',
+        'lg' => 'Large',
+        'xl' => 'Extra large',
+    ];
+
     public static function type(): string
     {
         return 'section';
@@ -104,13 +116,62 @@ class SectionBlock implements Container, PageBlock
      *
      * The two fields used to be independent, so "Three" columns with a leftover
      * `1-1` ratio drew a two-track grid and wrapped the third column onto a new row.
+     * A custom ratio — what dragging a column edge on the canvas writes — is kept when
+     * it has one track per column.
      */
     public static function ratioFor(int $columns, mixed $ratio): string
     {
         $options = self::ratiosFor($columns);
         $ratio = is_string($ratio) ? $ratio : '';
 
-        return array_key_exists($ratio, $options) ? $ratio : array_key_first($options);
+        if (array_key_exists($ratio, $options) || self::isCustomRatio($columns, $ratio)) {
+            return $ratio;
+        }
+
+        return array_key_first($options);
+    }
+
+    /**
+     * Whether `$ratio` is a dragged-to-size layout: one whole-number weight per column.
+     */
+    public static function isCustomRatio(int $columns, mixed $ratio): bool
+    {
+        if (! is_string($ratio) || ! preg_match('/^\d{1,3}(?:-\d{1,3})*$/', $ratio)) {
+            return false;
+        }
+
+        $tracks = array_map('intval', explode('-', $ratio));
+
+        return count($tracks) === max(1, min(4, $columns))
+            && min($tracks) >= 1
+            && ! array_key_exists($ratio, self::ratiosFor($columns));
+    }
+
+    /**
+     * Column widths as percentages that add up to 100, from any valid ratio.
+     *
+     * @return array<int, int>
+     */
+    public static function percentagesFor(int $columns, mixed $ratio): array
+    {
+        $tracks = array_map('intval', explode('-', self::ratioFor($columns, $ratio)));
+        $total = array_sum($tracks) ?: 1;
+        $percentages = array_map(fn (int $track): int => (int) round($track / $total * 100), $tracks);
+        $percentages[array_key_last($percentages)] += 100 - array_sum($percentages);
+
+        return $percentages;
+    }
+
+    /**
+     * The inline `grid-template-columns` for a custom ratio, or null for a preset.
+     */
+    public static function customTracks(int $columns, mixed $ratio): ?string
+    {
+        if (! self::isCustomRatio($columns, $ratio)) {
+            return null;
+        }
+
+        return implode(' ', array_map(fn (string $track): string => "minmax(0, {$track}fr)", explode('-', (string) $ratio)));
     }
 
     /**
@@ -134,8 +195,41 @@ class SectionBlock implements Container, PageBlock
                 }),
             Select::make('ratio')
                 ->label('Column layout')
-                ->options(fn (callable $get): array => self::ratiosFor((int) ($get('columns') ?? 2)))
+                ->helperText('Or drag the edge between two columns on the page.')
+                ->options(function (callable $get): array {
+                    $columns = (int) ($get('columns') ?? 2);
+                    $options = self::ratiosFor($columns);
+                    $ratio = $get('ratio');
+
+                    if (self::isCustomRatio($columns, $ratio)) {
+                        $options[$ratio] = 'Custom ('.implode(' / ', self::percentagesFor($columns, $ratio)).'%)';
+                    }
+
+                    return $options;
+                })
                 ->default('1-1'),
+            Grid::make(2)->schema([
+                Select::make('gap')
+                    ->label('Space between')
+                    ->options(self::GAPS)
+                    ->placeholder('Medium'),
+                Select::make('valign')
+                    ->label('Line up columns')
+                    ->options([
+                        'start' => 'Top',
+                        'center' => 'Middle',
+                        'end' => 'Bottom',
+                        'stretch' => 'Same height',
+                    ])
+                    ->placeholder('Top'),
+            ]),
+            Select::make('stack')
+                ->label('Stack the columns')
+                ->options([
+                    'tablet' => 'On tablets and phones',
+                    'never' => 'Never',
+                ])
+                ->placeholder('On phones'),
         ];
     }
 }

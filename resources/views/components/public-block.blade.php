@@ -4,6 +4,7 @@
     use CarlJanzell\FilamentPageBuilder\BlockRegistry;
     use CarlJanzell\FilamentPageBuilder\PageBuilder;
     use CarlJanzell\FilamentPageBuilder\Support\BlockStateNormaliser;
+    use CarlJanzell\FilamentPageBuilder\Support\BlockStyle;
     use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 
     $registry = app(BlockRegistry::class);
@@ -15,18 +16,22 @@
     );
     $slotNames = $registry->slots($block['type'] ?? null, $block['data'] ?? []);
     $anchor = BlockTree::isValidAnchor($block['anchor'] ?? null) ? $block['anchor'] : null;
+    $style = BlockStyle::compile(is_array($block['style'] ?? null) ? $block['style'] : []);
 @endphp
 
 @if ($definition)
     <div
-        class="fpb-el"
+        class="fpb-el{{ $style['class'] ? ' '.$style['class'] : '' }}"
         @if ($anchor) id="{{ $anchor }}" @endif
+        @if ($style['combined'] !== '') style="{{ $style['combined'] }}" @endif
+        @if ($style['sized']) data-fpb-sized="height" @endif
         @foreach ($settings as $token => $value)
             @if (is_string($token) && preg_match('/^[a-z-]+$/', $token) && is_string($value))
                 data-fpb-{{ $token }}="{{ $value }}"
             @endif
         @endforeach
     >
+        @include('page-builder::components.background', ['layer' => $style['background']])
         @php
             PageBuilder::rendering($block['type'], $data);
 

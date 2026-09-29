@@ -274,4 +274,41 @@ class PageBuilder
             static::editablesFor($type),
         ));
     }
+
+    /**
+     * The shortcodes of the panel being served, or of the default panel on the public site.
+     */
+    public static function shortcodes(): Shortcodes
+    {
+        return app(BlockRegistry::class)->shortcodes();
+    }
+
+    /**
+     * A plain-text field as HTML: escaped, with shortcodes run on the published page.
+     *
+     * On the canvas the field is being typed into, so it shows the shortcode as written;
+     * running it there would put the shortcode's output into the editor, and the next
+     * commit would save that output over the shortcode.
+     */
+    public static function text(mixed $value): string
+    {
+        $value = is_scalar($value) ? (string) $value : '';
+
+        if (static::isEditing()) {
+            return e($value);
+        }
+
+        return static::shortcodes()->expand($value);
+    }
+
+    /**
+     * Markup a block already trusts (rich text, custom HTML), with shortcodes run in it.
+     *
+     * For application blocks that want shortcodes in their own HTML fields:
+     * `{!! PageBuilder::markup($data['body']) !!}`.
+     */
+    public static function markup(mixed $html): string
+    {
+        return static::shortcodes()->expand(is_string($html) ? $html : '', escape: false);
+    }
 }
