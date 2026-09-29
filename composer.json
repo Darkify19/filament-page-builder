@@ -10,7 +10,7 @@
         "page-builder",
         "drag-and-drop"
     ],
-    "homepage": "https://carljanzell.github.io/filament-page-builder/",
+    "homepage": "https://darkify19.github.io/filament-page-builder/",
     "license": "proprietary",
     "authors": [
         {
@@ -20,7 +20,7 @@
     ],
     "support": {
         "email": "cnoropesa@up.edu.ph",
-        "docs": "https://carljanzell.github.io/filament-page-builder/"
+        "docs": "https://darkify19.github.io/filament-page-builder/"
     },
     "require": {
         "php": "^8.3",
