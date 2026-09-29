@@ -219,5 +219,4 @@ and block fixtures.
 
 ## Licence
 
-Proprietary — all rights reserved. The source is public for reference only; see
-[LICENSE](LICENSE). It is not open source, and no reuse rights are granted.
+The MIT licence. See [LICENSE](https://github.com/Darkify19/filament-page-builder/blob/main/LICENSE).

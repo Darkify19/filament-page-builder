@@ -11,7 +11,7 @@
         "drag-and-drop"
     ],
     "homepage": "https://darkify19.github.io/filament-page-builder/",
-    "license": "proprietary",
+    "license": "MIT",
     "authors": [
         {
             "name": "Carl Janzell",
