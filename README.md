@@ -49,6 +49,13 @@ Requires **PHP 8.3+** and **Filament 5.x**.
 composer require carljanzell/filament-page-builder
 ```
 
+The service provider is auto-discovered. Publish the canvas assets. If your `composer.json`
+already runs `php artisan filament:upgrade` after autoload, this happens on every install:
+
+```bash
+php artisan filament:assets
+```
+
 Register the plugin on a panel:
 
 ```php
