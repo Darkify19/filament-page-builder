@@ -4,8 +4,8 @@ namespace CarlJanzell\FilamentPageBuilder\Blocks;
 
 use CarlJanzell\FilamentPageBuilder\Contracts\Container;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Grid;
 
 /**
  * A row of columns that other blocks drop into.

@@ -7,10 +7,10 @@ use CarlJanzell\FilamentPageBuilder\Support\BlockStyle;
 use CarlJanzell\FilamentPageBuilder\Support\EmbedUrl;
 use Closure;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Grid;
 
 /**
  * A video file the site hosts itself, with a start time and playback options.

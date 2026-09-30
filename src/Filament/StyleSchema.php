@@ -6,15 +6,15 @@ use CarlJanzell\FilamentPageBuilder\Support\BlockStyle;
 use CarlJanzell\FilamentPageBuilder\Support\EmbedUrl;
 use Closure;
 use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Get;
 
 /**
  * The inspector's Style and Layout tabs: every field of the custom style layer.
@@ -73,12 +73,6 @@ class StyleSchema
                     'center' => 'heroicon-m-bars-3',
                     'right' => 'heroicon-m-bars-3-bottom-right',
                     'justify' => 'heroicon-m-bars-4',
-                ])
-                ->tooltips([
-                    'left' => 'Align left',
-                    'center' => 'Centre',
-                    'right' => 'Align right',
-                    'justify' => 'Justify',
                 ])
                 ->hiddenButtonLabels()
                 ->inline()

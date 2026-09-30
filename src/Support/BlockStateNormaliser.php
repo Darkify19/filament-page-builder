@@ -3,20 +3,19 @@
 namespace CarlJanzell\FilamentPageBuilder\Support;
 
 use CarlJanzell\FilamentPageBuilder\BlockRegistry;
-use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Throwable;
 
 /**
  * Reconciles Filament's in-form state with the shape stored in the database.
  *
- * Two fields differ between editing and rest, and both will crash a renderer that
- * assumes the stored shape:
+ * FileUpload differs between editing and rest, and will crash a renderer that assumes
+ * the stored shape: it always holds an array (Arr::wrap'd path, or uuid =>
+ * TemporaryUploadedFile) while the stored column is a plain path string. Uploads can
+ * sit inside repeaters, so the walk is recursive.
  *
- *  - RichEditor holds a TipTap document array while editing but dehydrates to an HTML
- *    string on save. Editors can also sit inside repeaters, so the walk is recursive.
- *  - FileUpload always holds an array (Arr::wrap'd path, or uuid => TemporaryUploadedFile)
- *    while the stored column is a plain path string.
+ * Filament 3's RichEditor is Trix, which holds the same HTML string while editing that
+ * it stores, so rich text needs no conversion here.
  *
  * Uploads are resolved by declared field name rather than by shape, because a map of
  * strings is indistinguishable from a repeater item.
@@ -66,7 +65,6 @@ class BlockStateNormaliser
                 }
 
                 return match (true) {
-                    $this->isRichTextDocument($value) => RichContentRenderer::make($value)->toHtml(),
                     is_array($value) => $this->normaliseData($value, $fileFields),
                     default => $value,
                 };
@@ -98,10 +96,5 @@ class BlockStateNormaliser
         }
 
         return null;
-    }
-
-    protected function isRichTextDocument(mixed $value): bool
-    {
-        return is_array($value) && ($value['type'] ?? null) === 'doc';
     }
 }

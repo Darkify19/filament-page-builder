@@ -13,11 +13,11 @@ use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\Support\BlockHistory;
 use CarlJanzell\FilamentPageBuilder\Support\BlockStateNormaliser;
 use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
-use Filament\Schemas\Schema;
-use Filament\Support\Enums\Width;
+use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -44,7 +44,7 @@ abstract class DesignPage extends Page
     use ResizesBlocks;
     use UsesClipboard;
 
-    protected string $view = 'page-builder::design';
+    protected static string $view = 'page-builder::design';
 
     /**
      * @var array<int, array<string, mixed>>
@@ -127,7 +127,7 @@ abstract class DesignPage extends Page
      * The Filament page heading stays empty so the editor chrome can own the top of
      * the viewport. The browser tab still uses getTitle().
      */
-    public function getHeading(): string|Htmlable|null
+    public function getHeading(): string|Htmlable
     {
         return '';
     }
@@ -140,9 +140,13 @@ abstract class DesignPage extends Page
         return [];
     }
 
-    public function getMaxContentWidth(): Width|string|null
+    /**
+     * Full, not Screen: Filament 3's layout has no class for MaxWidth::Screen and would
+     * try to print the enum itself as one.
+     */
+    public function getMaxContentWidth(): MaxWidth|string|null
     {
-        return Width::Screen;
+        return MaxWidth::Full;
     }
 
     /**
@@ -766,7 +770,7 @@ abstract class DesignPage extends Page
         // block — or at no block at all — so it is dropped and rebuilt before the new
         // state is filled in. Without this the inspector hydrates an empty editor and
         // committing it would wipe the block's content.
-        $this->cacheSchema('form', null);
+        $this->rebuildForm('form');
 
         $this->form->fill($this->blockData);
 
@@ -783,7 +787,7 @@ abstract class DesignPage extends Page
 
         $this->blockData = $index === null ? [] : ($this->blocks[$index]['data'] ?? []);
 
-        $this->cacheSchema('form', null);
+        $this->rebuildForm('form');
 
         $this->form->fill($this->blockData);
     }
@@ -941,7 +945,7 @@ abstract class DesignPage extends Page
         // showing what the page said before the edit.
         if ($this->selectedId === $id) {
             $this->blockData[$field] = $value;
-            $this->cacheSchema('form', null);
+            $this->rebuildForm('form');
             $this->form->fill($this->blockData);
         }
     }
@@ -1048,11 +1052,34 @@ abstract class DesignPage extends Page
         return array_values(array_filter($values, fn (mixed $value): bool => is_string($value) || is_int($value)));
     }
 
-    public function form(Schema $schema): Schema
+    public function form(Form $form): Form
     {
-        return $schema
-            ->components(fn (): array => $this->selectedBlockSchema())
+        return $form
+            ->schema(fn (): array => $this->selectedBlockSchema())
             ->statePath('blockData');
+    }
+
+    /**
+     * Filament 3 builds only the forms a page lists here. The two style forms come from
+     * EditsBlockStyle.
+     *
+     * @return array<int, string>
+     */
+    protected function getForms(): array
+    {
+        return ['form', 'styleForm', 'layoutForm'];
+    }
+
+    /**
+     * Replace a cached form with a fresh one built for the current selection.
+     *
+     * Its schema comes from $selectedId, so a form cached for the previous block would
+     * hydrate the wrong fields. Filament 3 does not rebuild a form it has dropped from
+     * the cache, so the new one is built and cached in the same step.
+     */
+    protected function rebuildForm(string $name): void
+    {
+        $this->cacheForm($name, $this->{$name}($this->makeForm()));
     }
 
     /**

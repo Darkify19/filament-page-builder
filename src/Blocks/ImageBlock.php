@@ -8,12 +8,12 @@ use CarlJanzell\FilamentPageBuilder\Editable;
 use CarlJanzell\FilamentPageBuilder\Support\BlockStyle;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Get;
 
 class ImageBlock implements InlineEditable, PageBlock
 {

@@ -6,28 +6,19 @@ beforeEach(function (): void {
     $this->normaliser = app(BlockStateNormaliser::class);
 });
 
-it('renders a rich text document to html', function (): void {
-    $document = [
-        'type' => 'doc',
-        'content' => [[
-            'type' => 'paragraph',
-            'content' => [['type' => 'text', 'text' => 'Hello']],
-        ]],
-    ];
+it('leaves rich text html as it is, since Trix already holds the stored shape', function (): void {
+    $html = '<p>Hello <strong>there</strong></p>';
 
-    expect($this->normaliser->normaliseData(['body' => $document])['body'])
-        ->toContain('Hello');
+    expect($this->normaliser->normaliseData(['body' => $html])['body'])->toBe($html);
 });
 
-it('walks into nested arrays so editors inside repeaters are handled', function (): void {
-    $document = ['type' => 'doc', 'content' => [[
-        'type' => 'paragraph',
-        'content' => [['type' => 'text', 'text' => 'Nested']],
-    ]]];
+it('walks into nested arrays so fields inside repeaters are handled', function (): void {
+    $result = $this->normaliser->normaliseData(
+        ['items' => [['body' => '<p>Nested</p>', 'image' => ['uuid' => 'pages/nested.jpg']]]],
+        ['image'],
+    );
 
-    $result = $this->normaliser->normaliseData(['items' => [['body' => $document]]]);
-
-    expect($result['items'][0]['body'])->toContain('Nested');
+    expect($result['items'][0])->toBe(['body' => '<p>Nested</p>', 'image' => 'pages/nested.jpg']);
 });
 
 it('reduces a declared file field to its stored path', function (): void {

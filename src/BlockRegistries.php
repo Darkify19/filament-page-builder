@@ -2,6 +2,7 @@
 
 namespace CarlJanzell\FilamentPageBuilder;
 
+use Filament\Exceptions\NoDefaultPanelSetException;
 use Filament\Facades\Filament;
 
 /**
@@ -28,10 +29,15 @@ class BlockRegistries
      *
      * Falls back to the default panel: block content is also rendered on the public site,
      * where no panel is current but the block types are still the application's.
+     * Filament 3 throws when no panel is marked default, rather than returning null.
      */
     public function current(): BlockRegistry
     {
-        $panel = Filament::getCurrentOrDefaultPanel();
+        try {
+            $panel = Filament::getCurrentPanel() ?? Filament::getDefaultPanel();
+        } catch (NoDefaultPanelSetException) {
+            $panel = null;
+        }
 
         return $this->for($panel?->getId() ?? 'default');
     }
