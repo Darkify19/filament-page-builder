@@ -43,7 +43,13 @@ surfaces read and write the same JSON, so neither owns the content.
 
 ## Installation
 
-Requires **PHP 8.3+** and **Filament 5.x**.
+Requires **PHP 8.3+** and **Filament 3.3.53+**.
+
+> This is the **Filament 3** branch. For Filament 4.12.6+ and 5.x, see
+> [`main`](https://github.com/Darkify19/filament-page-builder). On a Filament 3 panel,
+> `composer require` picks the Filament 3 release on its own. Differences from `main`:
+> the Code block edits in a monospaced textarea (Filament 3 has no code editor field),
+> and the Style tab's alignment buttons have no tooltips.
 
 ```bash
 composer require carljanzell/filament-page-builder

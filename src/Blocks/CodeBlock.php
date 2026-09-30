@@ -4,11 +4,10 @@ namespace CarlJanzell\FilamentPageBuilder\Blocks;
 
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
-use Filament\Forms\Components\CodeEditor;
-use Filament\Forms\Components\CodeEditor\Enums\Language;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Text;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Textarea;
 use Throwable;
 
 /**
@@ -83,25 +82,45 @@ class CodeBlock implements PageBlock
                 ->contained(false)
                 ->tabs([
                     Tab::make('HTML')->schema([
-                        CodeEditor::make('html')
-                            ->hiddenLabel()
-                            ->language(Language::Html),
-                        Text::make('Shortcodes work here too, e.g. [year].'),
+                        self::editor('html'),
+                        self::hint('html_hint', 'Shortcodes work here too, e.g. [year].'),
                     ]),
                     Tab::make('CSS')->schema([
-                        CodeEditor::make('css')
-                            ->hiddenLabel()
-                            ->language(Language::Css),
-                        Text::make('Applies to the whole page. Start your selectors with a class of your own.'),
+                        self::editor('css'),
+                        self::hint('css_hint', 'Applies to the whole page. Start your selectors with a class of your own.'),
                     ]),
                     Tab::make('JavaScript')->schema([
-                        CodeEditor::make('js')
-                            ->hiddenLabel()
-                            ->language(Language::JavaScript),
-                        Text::make('Runs once the page has loaded, in Preview and on the published page — not on the canvas. `root` is this block\'s element.'),
+                        self::editor('js'),
+                        self::hint('js_hint', 'Runs once the page has loaded, in Preview and on the published page — not on the canvas. `root` is this block\'s element.'),
                     ]),
                 ]),
         ];
+    }
+
+    /**
+     * Filament 3 has no code editor field, so the code is written in a monospaced
+     * textarea. Spellcheck and autocorrect are off: both rewrite code as it is typed.
+     */
+    protected static function editor(string $name): Textarea
+    {
+        return Textarea::make($name)
+            ->hiddenLabel()
+            ->rows(12)
+            ->extraInputAttributes([
+                'spellcheck' => 'false',
+                'autocapitalize' => 'off',
+                'autocomplete' => 'off',
+                'style' => 'font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8125rem; tab-size: 4;',
+            ]);
+    }
+
+    /**
+     * A line of guidance under an editor. A placeholder needs a name of its own, and it is
+     * never dehydrated, so nothing is stored under it.
+     */
+    protected static function hint(string $name, string $text): Placeholder
+    {
+        return Placeholder::make($name)->hiddenLabel()->content($text);
     }
 
     /**

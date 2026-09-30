@@ -5,7 +5,7 @@ namespace CarlJanzell\FilamentPageBuilder\Blocks;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Schemas\Components\Utilities\Set;
+use Filament\Forms\Set;
 
 /**
  * Empty vertical space, to push one block away from the next.

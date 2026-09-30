@@ -5,12 +5,12 @@ namespace CarlJanzell\FilamentPageBuilder\Blocks;
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use CarlJanzell\FilamentPageBuilder\Support\EmbedUrl;
 use Closure;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Get;
 
 /**
  * An allowlisted iframe: a video, a map, a form, a slide deck.

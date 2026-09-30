@@ -4,8 +4,8 @@ namespace CarlJanzell\FilamentPageBuilder\Blocks;
 
 use CarlJanzell\FilamentPageBuilder\Contracts\PageBlock;
 use CarlJanzell\FilamentPageBuilder\PageBuilder;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Components\Text;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -67,7 +67,7 @@ class ShortcodeBlock implements PageBlock
                 ->rows(3)
                 ->placeholder('[year]')
                 ->helperText('Text around the shortcode is shown as written.'),
-            Text::make(fn (): HtmlString => self::reference()),
+            Placeholder::make('shortcodes')->hiddenLabel()->content(fn (): HtmlString => self::reference()),
         ];
     }
 

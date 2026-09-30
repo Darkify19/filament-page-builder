@@ -6,7 +6,7 @@ use CarlJanzell\FilamentPageBuilder\Filament\StyleSchema;
 use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
 use CarlJanzell\FilamentPageBuilder\Support\BlockStyle;
 use CarlJanzell\FilamentPageBuilder\Support\EmbedUrl;
-use Filament\Schemas\Schema;
+use Filament\Forms\Form;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -15,7 +15,7 @@ use Throwable;
  * on a selected block, and copying one block's look onto another.
  *
  * Follows the content inspector's rules exactly, for the same reasons: commit through
- * `getState()` (uploads move out of temporary storage there), drop the cached schema
+ * `getState()` (uploads move out of temporary storage there), rebuild the cached form
  * before filling it, never commit while syncing, record history only once something
  * will change. What reaches `$blocks` has always been through `BlockStyle::sanitize()`.
  */
@@ -35,17 +35,17 @@ trait EditsBlockStyle
      */
     public array $blockLayout = [];
 
-    public function styleForm(Schema $schema): Schema
+    public function styleForm(Form $form): Form
     {
-        return $schema
-            ->components(fn (): array => $this->showsStyleForms() ? StyleSchema::style() : [])
+        return $form
+            ->schema(fn (): array => $this->showsStyleForms() ? StyleSchema::style() : [])
             ->statePath('blockStyle');
     }
 
-    public function layoutForm(Schema $schema): Schema
+    public function layoutForm(Form $form): Form
     {
-        return $schema
-            ->components(fn (): array => $this->showsStyleForms() ? StyleSchema::layout() : [])
+        return $form
+            ->schema(fn (): array => $this->showsStyleForms() ? StyleSchema::layout() : [])
             ->statePath('blockLayout');
     }
 
@@ -263,8 +263,8 @@ trait EditsBlockStyle
 
         [$this->blockStyle, $this->blockLayout] = BlockStyle::split(is_array($style) ? $style : []);
 
-        $this->cacheSchema('styleForm', null);
-        $this->cacheSchema('layoutForm', null);
+        $this->rebuildForm('styleForm');
+        $this->rebuildForm('layoutForm');
 
         $this->styleForm->fill($this->blockStyle);
         $this->layoutForm->fill($this->blockLayout);

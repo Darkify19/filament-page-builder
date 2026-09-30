@@ -2,7 +2,7 @@
 
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Filament\PageResource;
-use Filament\Support\Enums\Width;
+use Filament\Support\Enums\MaxWidth;
 
 beforeEach(function (): void {
     PageResource::$canEdit = true;
@@ -37,7 +37,7 @@ it('opens as a full-screen editor without Filament page chrome', function (): vo
 
     expect($instance->getHeading())->toBe('')
         ->and($instance->getBreadcrumbs())->toBe([])
-        ->and($instance->getMaxContentWidth())->toBe(Width::Screen)
+        ->and($instance->getMaxContentWidth())->toBe(MaxWidth::Full)
         ->and($instance->getExtraBodyAttributes()['class'])->toContain('fpb-edit-mode')
         ->and($instance->getPageClasses())->toContain('fpb-editor-page')
         ->and($instance->getPageClasses())->not->toContain('fpb-page')

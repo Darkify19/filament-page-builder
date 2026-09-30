@@ -17,11 +17,11 @@ it('keeps each panel to the blocks it registered', function (): void {
 });
 
 it('resolves the registry of the panel being served', function (): void {
-    Filament::setCurrentPanel('second');
+    Filament::setCurrentPanel(Filament::getPanel('second'));
 
     expect(array_keys(app(BlockRegistries::class)->current()->all()))->toBe(['heading']);
 
-    Filament::setCurrentPanel('testing');
+    Filament::setCurrentPanel(Filament::getPanel('testing'));
 
     expect(array_keys(app(BlockRegistries::class)->current()->all()))
         ->toBe(['heading', 'banner', 'restricted']);

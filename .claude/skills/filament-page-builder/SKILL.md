@@ -5,9 +5,31 @@ description: "Domain expertise for carljanzell/filament-page-builder, a Composer
 
 # Filament Page Builder: package skill
 
-**`carljanzell/filament-page-builder`**: a Laravel package (`type: library`) · PHP ^8.3 · Filament ^5 (locked 5.8.2) · Livewire 4 · Alpine (Filament's) · Anime.js 3.2.2 vendored · **no Node, no bundler, ever** · Pest 4 + Orchestra Testbench 11 · MIT licence, installed from Packagist.
+**`carljanzell/filament-page-builder`**: a Laravel package (`type: library`) · PHP ^8.3 · **Filament ^3.3.53 (the `filament-3` branch; `dev`/`main` are Filament 4.12.6+/5)** · Livewire 3 · Alpine (Filament's) · Anime.js 3.2.2 vendored · **no Node, no bundler, ever** · Pest 4 + Orchestra Testbench 11 · MIT licence, installed from Packagist.
 
 It adds a full-screen visual canvas beside Filament's `Builder` form field. Both surfaces read and write the same JSON column. **The package owns the mechanism** (registry, canvas, renderer, state handling). **The application owns the content**: block classes, their Blade views, the model and the migration. The package never ships any of those.
+
+
+## This branch: Filament 3
+
+`filament-3` is `dev` ported to Filament 3.3. Fixes land on `dev` first, then get ported here by hand. The deep-dives describe Filament 4/5, so translate as you read:
+
+| Filament 4/5 (dev) | Filament 3 (here) |
+|---|---|
+| `protected string $view` | `protected static string $view` |
+| `form(Schema $schema): Schema` + `->components()` | `form(Form $form): Form` + `->schema()`; list every form in `getForms()` |
+| `$this->cacheSchema('form', null)` | `$this->rebuildForm('form')` (v3 does not rebuild a dropped form) |
+| `Filament\Schemas\Components\{Grid,Section,Tabs,Fieldset}`, `Utilities\Get/Set` | `Filament\Forms\Components\…`, `Filament\Forms\Get/Set` |
+| `Schemas\Components\Text` | `Placeholder::make($name)->hiddenLabel()->content(…)` |
+| `CodeEditor` | Monospaced `Textarea` (`CodeBlock::editor()`) |
+| RichEditor = TipTap, rendered by `RichContentRenderer` | RichEditor = Trix, already HTML |
+| `Width::Screen` | `MaxWidth::Full` (v3's layout has no class for `Screen` and crashes printing it) |
+| `Filament::getCurrentOrDefaultPanel()` | `getCurrentPanel() ?? getDefaultPanel()`, catching `NoDefaultPanelSetException` |
+| Field id `form.{name}`, wrapper `.fi-fo-field` | Field id `blockData.{name}`, wrapper `.fi-fo-field-wrp` (`revealField()` in the JS) |
+| Chrome: `.fi-topbar-ctn`, `.fi-page-main`, `.fi-page-content`, `.fi-sc` | `.fi-topbar`, `.fi-page > section > div > div`, `.fi-fo-component-ctn` |
+| `ToggleButtons::tooltips()` | Not in v3; the hidden button labels still name each button |
+
+`tests/Feature/PanelRenderTest.php` renders the canvas through the panel route, so layout-level breakage shows up in CI. The Livewire-only tests never render the layout. Tests need `BladeCaptureDirectiveServiceProvider`, because Filament 3's views use `@capture`.
 
 ---
 
@@ -57,7 +79,7 @@ src/
   Blocks/                         # shipped primitives: Section (Container), Text, Image, Button, Embed, Spacer, Divider
   Support/BlockTree.php           # the flat tree: hydrate(), move/insert/remove/duplicate, MAX_DEPTH = 5
   Support/BlockHistory.php        # session undo stack, LIMIT 30, tagged by Livewire component id
-  Support/BlockStateNormaliser.php # TipTap doc → HTML, upload array → path / temporary URL
+  Support/BlockStateNormaliser.php # upload array → path / temporary URL (Trix already stores HTML)
   Filament/Pages/DesignPage.php   # abstract canvas page: every mutation, the inspector, save()
 resources/
   views/design.blade.php          # editor chrome: toolbar, Blocks/Structure tabs, canvas, Content/Style inspector
