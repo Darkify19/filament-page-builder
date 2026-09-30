@@ -43,7 +43,9 @@ surfaces read and write the same JSON, so neither owns the content.
 
 ## Installation
 
-Requires **PHP 8.3+** and **Filament 4.12.6+ or 5.x**.
+Requires **PHP 8.3+** and **Filament 4.12.6+ or 5.x**. On **Filament 3.3.53+**, the same
+command installs the 0.3.x line, built from the
+[`filament-3`](https://github.com/Darkify19/filament-page-builder/tree/filament-3) branch.
 
 ```bash
 composer require carljanzell/filament-page-builder
@@ -219,6 +221,14 @@ Each column renders as a `.fpb-slot` inside its `.fpb-section`. That wrapper is 
 keeps a column's blocks in that column — a section is a grid, and without it every
 block becomes its own grid cell. Ship the package stylesheet on the public site, or
 give `.fpb-section` and `.fpb-slot` the equivalent rules in your own theme.
+
+A public page is not inside a panel, so the renderer uses the blocks your **default**
+panel registered. If the plugin is on a different panel, name it, or every block is
+unknown and the page renders empty:
+
+```blade
+<x-page-builder::blocks :blocks="$page->blocks" panel="admin" />
+```
 
 ## Tests
 

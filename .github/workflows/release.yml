@@ -23,5 +23,8 @@ jobs:
         with:
           name: ${{ github.ref_name }}
           generate_release_notes: true
+          # Latest goes to the highest version, not the newest tag: a patch on the Filament 3
+          # line (0.3.x) must not take it from the Filament 4/5 line.
+          make_latest: legacy
           # v1.0.0-beta.1 and similar stay marked as pre-releases.
           prerelease: ${{ contains(github.ref_name, '-') }}
