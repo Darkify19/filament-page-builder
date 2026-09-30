@@ -13,6 +13,11 @@ content as an ordered array of typed blocks in a single JSON column.
 
 </div>
 
+**Which version?** Filament 4.12.6+ and 5.x use **v0.4.x**, from `main`; this README covers
+them. Filament 3.3.53+ uses **v0.3.x**, from the `filament-3` branch, whose docs are in the
+[Filament 3 README](https://github.com/Darkify19/filament-page-builder/blob/filament-3/README.md).
+`composer require carljanzell/filament-page-builder` picks the right one for your panel.
+
 > **Status: the canvas is a nested layout editor.** Palette with layout
 > primitives (including Embed), drag into columns, a document outline, token style
 > inspector, inline plaintext editing, undo/redo, ghost recovery and an optimistic
