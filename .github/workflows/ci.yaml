@@ -1,18 +1,29 @@
 name: CI
 
+# The Filament 3 line. Filament 4 and 5 are on dev and main.
 on:
   push:
-    branches: [main, dev]
-  # Pull requests target dev. The bot's dev-to-main promotion PR merges within seconds,
-  # and every run for it failed as a "workflow file issue" before a job started. The
-  # push to dev has already run the suite on the same commits.
+    branches: [filament-3]
   pull_request:
-    branches: [dev]
+    branches: [filament-3]
 
 jobs:
   quality:
-    name: Lint and static checks
+    name: Tests (Filament ${{ matrix.filament }}, Laravel ${{ matrix.laravel }})
     runs-on: ubuntu-latest
+
+    # The floor on Laravel 11 and the newest 3.3.x on Laravel 12, the last Laravel that
+    # Filament 3 supports. 3.3.53 is the first 3.3.x without a Filament security advisory.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - filament: '3.3.53'
+            laravel: '11'
+            testbench: '^9.0'
+          - filament: '^3.3.53'
+            laravel: '12'
+            testbench: '^10.0'
 
     steps:
       - uses: actions/checkout@v4
@@ -26,8 +37,18 @@ jobs:
       - name: Validate composer.json
         run: composer validate --strict --no-check-lock
 
+      # Every Laravel 11 release now carries a security advisory and none will be patched,
+      # and Composer refuses such versions by default. That row checks compatibility for
+      # applications still on Laravel 11, so it lets them install.
+      - name: Allow Laravel 11
+        if: matrix.laravel == '11'
+        run: composer config audit.block-insecure false
+
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: |
+          composer require --no-update --no-interaction "filament/filament:${{ matrix.filament }}"
+          composer require --dev --no-update --no-interaction "orchestra/testbench:${{ matrix.testbench }}"
+          composer update --prefer-dist --no-interaction --no-progress --with-all-dependencies
 
       - name: Lint PHP syntax
         run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
