@@ -1531,8 +1531,9 @@ document.addEventListener('alpine:init', () => {
             this.inspectorTab = 'content';
 
             this.$nextTick(() => {
-                const input = this.$root.querySelector(`.fpb-inspector [id="form.${this.cssEscape(field)}"]`);
-                const wrapper = input?.closest('.fi-fo-field') ?? input;
+                // Filament 3 ids a field by its state path, and wraps it in .fi-fo-field-wrp.
+                const input = this.$root.querySelector(`.fpb-inspector [id="blockData.${this.cssEscape(field)}"]`);
+                const wrapper = input?.closest('.fi-fo-field-wrp') ?? input;
 
                 if (!wrapper) {
                     return;
@@ -1831,13 +1832,30 @@ document.addEventListener('alpine:init', () => {
  * text and drop the caret to the end of it.
  */
 document.addEventListener('livewire:init', () => {
-    window.Livewire.hook('morph.updating', ({ el, skip }) => {
+    window.Livewire.hook('morph.updating', ({ el, toEl, skip }) => {
         if (
             el instanceof HTMLElement &&
             el.hasAttribute('data-fpb-field') &&
             (el === document.activeElement || el.contains(document.activeElement))
         ) {
             skip();
+
+            return;
+        }
+
+        // Filament 3 loads some fields' Alpine code on demand (x-load) and holds the field
+        // back with an x-ignore it adds in the browser. The server's HTML has no x-ignore,
+        // so a morph strips it and Alpine starts the field before its code has arrived:
+        // "colorPickerFormComponent is not defined" on every render of the Style tab while
+        // it is hidden. Keep the hold until Filament lifts it itself.
+        if (
+            el instanceof HTMLElement &&
+            toEl instanceof HTMLElement &&
+            el.hasAttribute('x-load') &&
+            el.hasAttribute('x-ignore') &&
+            !toEl.hasAttribute('x-ignore')
+        ) {
+            toEl.setAttribute('x-ignore', '');
         }
     });
 });

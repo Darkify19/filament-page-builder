@@ -322,7 +322,13 @@ body.fpb-edit-mode .fpb-slot[data-drop-active="true"] {
 .fpb-empty-copy { margin: 0 0 1rem; opacity: 0.65; }
 .fpb-empty-copy-narrow { display: none; }
 .fpb-empty-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
-.fpb-empty-btn {
+/*
+ * The three buttons with a background of their own are written as button.fpb-…, one step
+ * more specific than [type="button"]. Some Filament 3 plugins ship Tailwind's preflight
+ * unscoped, and its [type="button"] { background: initial } would otherwise win on load
+ * order and leave white text on nothing.
+ */
+button.fpb-empty-btn {
     padding: 0.45rem 0.75rem; border-radius: 0.5rem; border: 1px solid rgba(37, 99, 235, 0.35);
     background: rgba(37, 99, 235, 0.06); color: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
 }
@@ -695,8 +701,8 @@ body[data-fpb-resizing="y"] * { cursor: ns-resize !important; }
 .fpb-icon { width: 1rem; height: 1rem; }
 
 .fpb-style-panel { display: grid; gap: 0.75rem; }
-.fpb-style-panel > .fi-sc,
-.fpb-style-panel .fi-sc { gap: 0.75rem; }
+.fpb-style-panel > .fi-fo-component-ctn,
+.fpb-style-panel .fi-fo-component-ctn { gap: 0.75rem; }
 .fpb-presets { border: 1px solid rgba(128, 128, 128, 0.22); border-radius: 0.6rem; padding: 0.6rem 0.75rem; }
 .fpb-presets summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; }
 .fpb-presets[open] summary { margin-bottom: 0.5rem; }
@@ -760,7 +766,7 @@ body[data-fpb-resizing="y"] * { cursor: ns-resize !important; }
 .fpb-preview-heading strong { font-size: 0.95rem; }
 .fpb-preview-note { font-size: 0.75rem; opacity: 0.65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fpb-preview-actions { display: flex; gap: 0.4rem; align-items: center; }
-.fpb-preview-close {
+button.fpb-preview-close {
     display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.75rem;
     border: 0; border-radius: 0.45rem; background: #2563eb; color: #fff; font-size: 0.78rem; font-weight: 650; cursor: pointer;
 }
@@ -790,23 +796,28 @@ body.fpb-edit-mode {
     overflow: hidden;
 }
 
-body.fpb-edit-mode .fi-topbar-ctn,
+body.fpb-edit-mode .fi-topbar,
 body.fpb-edit-mode .fi-sidebar,
 body.fpb-edit-mode .fi-sidebar-close-overlay,
-body.fpb-edit-mode .fi-layout-sidebar-toggle-btn-ctn,
 body.fpb-edit-mode .fi-header {
     display: none !important;
 }
 
+/*
+ * Filament 3's page puts its content inside a section and two divs that have no class
+ * of their own and are spaced with py-8 / gap-y-8 utilities, so they are reached by
+ * structure instead.
+ */
 body.fpb-edit-mode .fi-layout,
 body.fpb-edit-mode .fi-main-ctn,
 body.fpb-edit-mode .fi-main,
 body.fpb-edit-mode .fi-page,
-body.fpb-edit-mode .fi-page-header-main-ctn,
-body.fpb-edit-mode .fi-page-main,
-body.fpb-edit-mode .fi-page-content {
+body.fpb-edit-mode .fi-page > section,
+body.fpb-edit-mode .fi-page > section > div,
+body.fpb-edit-mode .fi-page > section > div > div {
     margin: 0 !important;
     padding: 0 !important;
+    gap: 0 !important;
     max-width: none !important;
     width: 100%;
     height: 100%;
@@ -895,7 +906,7 @@ body.fpb-edit-mode .fi-main-ctn {
         touch-action: manipulation;
     }
 
-    .fpb-add {
+    button.fpb-add {
         display: flex;
         align-items: center;
         justify-content: center;
