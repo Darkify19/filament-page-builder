@@ -167,6 +167,10 @@ return [
         'code_hint' => 'El texto alrededor del shortcode se muestra tal cual.',
         'reference_title' => 'Shortcodes disponibles',
         'reference_empty' => 'Este sitio aún no tiene shortcodes. Un desarrollador puede añadirlos con <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+
+        /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
+        'builtin_year' => 'El año actual.',
+        'builtin_date' => 'La fecha de hoy. Formato opcional, tal como PHP escribe las fechas.',
     ],
     'problems' => [
         'short_map' => 'Los enlaces de mapa cortos no se pueden incrustar. En Google Maps elige Compartir → Incrustar un mapa, copia el HTML y pégalo aquí.',

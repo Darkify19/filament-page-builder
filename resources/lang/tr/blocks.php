@@ -167,6 +167,10 @@ return [
         'code_hint' => 'Kısa kodun çevresindeki metin yazıldığı gibi gösterilir.',
         'reference_title' => 'Kullanılabilir kısa kodlar',
         'reference_empty' => 'Bu sitede henüz kısa kod yok. Bir geliştirici <code>FilamentPageBuilderPlugin::shortcode()</code> ile ekleyebilir.',
+
+        /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
+        'builtin_year' => 'Bulunan yıl.',
+        'builtin_date' => 'Bugünün tarihi. Biçim isteğe bağlıdır, PHP tarihleri nasıl yazıyorsa öyle.',
     ],
     'problems' => [
         'short_map' => 'Kısa harita bağlantıları gömülemez. Google Haritalar\'da Paylaş → Harita göm seçin, HTML\'yi kopyalayıp buraya yapıştırın.',

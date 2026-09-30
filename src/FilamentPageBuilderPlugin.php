@@ -278,7 +278,7 @@ class FilamentPageBuilderPlugin implements Plugin
             ],
             'align' => [
                 'start' => __('page-builder::chrome.tokens.start'),
-                'center' => __('page-builder::chrome.common.centre'),
+                'center' => __('page-builder::chrome.centre'),
                 'end' => __('page-builder::chrome.tokens.end'),
             ],
         ];
@@ -365,11 +365,11 @@ class FilamentPageBuilderPlugin implements Plugin
 
         if ($this->includeLayoutBlocks) {
             $shortcodes
-                ->register('year', fn (): string => date('Y'), 'The current year.', '[year]')
+                ->register('year', fn (): string => date('Y'), __('page-builder::blocks.shortcode.builtin_year'), '[year]')
                 ->register(
                     'date',
                     fn (array $attributes): string => e(now()->format(is_string($attributes['format'] ?? null) ? $attributes['format'] : 'F j, Y')),
-                    "Today's date. Optional format, as PHP writes dates.",
+                    __('page-builder::blocks.shortcode.builtin_date'),
                     '[date format="F j, Y"]',
                 );
         }
