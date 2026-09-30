@@ -101,8 +101,14 @@ it('ships an English file for every group the package reads', function (string $
 
 it('ships a file for every group in every locale it claims to support', function (string $locale): void {
     foreach (FPB_GROUPS as $group) {
-        expect(File::exists(__DIR__.'/../../resources/lang/'.$locale.'/'.$group.'.php'))
-            ->toBeTrue("resources/lang/{$locale}/{$group}.php is missing");
+        $path = __DIR__.'/../../resources/lang/'.$locale.'/'.$group.'.php';
+
+        expect(File::exists($path))->toBeTrue("resources/lang/{$locale}/{$group}.php is missing");
+
+        // Existence is not parseable. A French apostrophe in a single-quoted string
+        // ("L'année en cours.") leaves a file that exists, that the parity checks can
+        // still compare, and that fatals the moment Laravel loads it. Parse every file.
+        expect(readTranslations($path))->toBeArray();
     }
 })->with(FPB_LOCALES);
 
@@ -197,4 +203,47 @@ it('publishes its translations so an application can override one sentence', fun
 
     // The thing this all exists for: a key that resolves to a sentence, not a dotted path.
     expect(__('page-builder::blocks.heading.label'))->not->toBe('page-builder::blocks.heading.label');
+});
+
+it('defines every key the package asks for at runtime', function (string $group, string $path): void {
+    $english = require __DIR__.'/../../resources/lang/en/'.$group.'.php';
+
+    expect(Arr::has($english, $path))
+        ->toBeTrue("page-builder::{$group}.{$path} is asked for but not defined in English");
+
+    expect(Arr::get($english, $path))->toBeString();
+})->with(function (): array {
+    $root = dirname(__DIR__, 2);
+    $referenced = [];
+
+    // Every key the package asks for, straight out of the source that asks for it. A key
+    // missing from all seven locales still satisfies the parity tests above, so nothing else
+    // in the suite would catch it — this is the only check that does.
+    foreach (['src', 'resources'] as $directory) {
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root.'/'.$directory, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if (! $file->isFile()) {
+                continue;
+            }
+
+            preg_match_all(
+                '/\bpage-builder::(?!components\.)(chrome|blocks|style|js)\.([a-z0-9_.]+)/',
+                (string) file_get_contents($file->getPathname()),
+                $matches
+            );
+
+            foreach ($matches[1] as $index => $group) {
+                $referenced[$group.'.'.$matches[2][$index]] = [$group, $matches[2][$index]];
+            }
+        }
+    }
+
+    expect($referenced)->not->toBeEmpty('the scan should find keys the package reads');
+
+    ksort($referenced);
+
+    return $referenced;
 });

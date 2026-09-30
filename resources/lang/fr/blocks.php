@@ -167,6 +167,10 @@ return [
         'code_hint' => 'Le texte autour du shortcode est affiché tel qu\'il a été écrit.',
         'reference_title' => 'Shortcodes disponibles',
         'reference_empty' => 'Ce site n\'a pas encore de shortcodes. Un développeur peut en ajouter avec <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+
+        /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
+        'builtin_year' => 'L\'année en cours.',
+        'builtin_date' => 'La date du jour. Format optionnel, tel que PHP écrit les dates.',
     ],
     'problems' => [
         'short_map' => 'Les liens de carte courts ne peuvent pas être intégrés. Dans Google Maps, choisissez Partager → Intégrer une carte, copiez le HTML et collez-le ici.',

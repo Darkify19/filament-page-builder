@@ -167,6 +167,10 @@ return [
         'code_hint' => 'Qısa kodun ətrafındakı mətn yazıldığı kimi göstərilir.',
         'reference_title' => 'Mövcud qısa kodlar',
         'reference_empty' => 'Bu saytda hələlik qısa kod yoxdur. Tərtibatçı <code>FilamentPageBuilderPlugin::shortcode()</code> ilə əlavə edə bilər.',
+
+        /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
+        'builtin_year' => 'Cari il.',
+        'builtin_date' => 'Bu günün tarixi. Format istəyə bağlıdır, PHP necə yazırsa elə.',
     ],
     'problems' => [
         'short_map' => 'Qısa xəritə keçidləri gömülə bilmir. Google Xəritələrdə Paylaş → Xəritəni göm seçin, HTML-i kopyalayıb buraya yapışdırın.',

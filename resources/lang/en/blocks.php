@@ -185,6 +185,10 @@ return [
         'code_hint' => 'Text around the shortcode is shown as written.',
         'reference_title' => 'Available shortcodes',
         'reference_empty' => 'This site has no shortcodes yet. A developer can add them with <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+
+        /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
+        'builtin_year' => 'The current year.',
+        'builtin_date' => "Today's date. Optional format, as PHP writes dates.",
     ],
 
     /**
