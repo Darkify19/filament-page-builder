@@ -210,22 +210,43 @@ html.dark .fpb {
 .fpb-block:hover::after { outline-color: rgba(120, 120, 120, 0.5); }
 .fpb-block[data-selected="true"]::after { outline-color: #2563eb; }
 
+/*
+ * The bar runs along the block's top edge, but only its pills catch the pointer. A
+ * full-width strip covered the first line of every selected block, so a click there
+ * reselected the block instead of landing the caret. Between the pills it now falls
+ * through to the text, and the text shows through.
+ */
 .fpb-block-bar {
     position: absolute; top: 0; left: 0; right: 0; z-index: 2;
-    display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.2rem 0.4rem; font-size: 0.7rem;
-    background: rgba(17, 17, 17, 0.8); color: #fff;
+    display: flex; align-items: center; gap: 0.25rem;
+    padding: 0.2rem; font-size: 0.7rem; color: #fff;
     opacity: 0; transition: opacity 0.15s;
+    pointer-events: none;
 }
 .fpb-block:hover > .fpb-block-bar,
 .fpb-block[data-selected="true"] > .fpb-block-bar { opacity: 1; }
+.fpb-block-bar > .fpb-block-handle,
+.fpb-block-bar > .fpb-block-label,
+.fpb-block-bar > .fpb-block-quick,
+.fpb-block-bar > .fpb-block-tools {
+    pointer-events: auto;
+    min-height: 1.3rem;
+    background: rgba(17, 17, 17, 0.8);
+    border-radius: 0.3rem;
+}
 .fpb-block-handle {
-    cursor: grab; color: #fff; background: none; border: 0;
-    padding: 0 0.15rem; letter-spacing: -0.12em; font-size: 0.85rem; line-height: 1;
+    cursor: grab; color: #fff; border: 0;
+    padding: 0 0.15rem 0 0.3rem; letter-spacing: -0.12em; font-size: 0.85rem; line-height: 1;
 }
 .fpb-block-handle:active { cursor: grabbing; }
-.fpb-block-label { text-transform: uppercase; letter-spacing: 0.04em; margin-right: auto; }
-.fpb-block-tools { display: flex; align-items: center; gap: 0.1rem; }
+/* The handle and the label read as one pill. */
+.fpb-block-bar > .fpb-block-handle { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.fpb-block-label {
+    display: inline-flex; align-items: center; padding: 0 0.45rem 0 0.2rem;
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0 auto 0 -0.25rem;
+    border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;
+}
+.fpb-block-tools { display: flex; align-items: center; gap: 0.1rem; padding: 0 0.2rem; }
 .fpb-block-tools button { color: #fff; padding: 0 0.2rem; cursor: pointer; background: none; border: 0; }
 .fpb-block-tools button:hover { color: #fca5a5; }
 .fpb-block-edit {
@@ -569,7 +590,7 @@ html.dark .fpb-style-field input { color-scheme: dark; }
 
 /* ── The editor: blocks you can grab by the edges ────────────────────────── */
 
-.fpb-block-quick { display: inline-flex; align-items: center; gap: 0.05rem; margin-right: 0.35rem; }
+.fpb-block-quick { display: inline-flex; align-items: center; gap: 0.05rem; padding: 0 0.1rem; }
 .fpb-block-quick button {
     display: inline-flex; align-items: center; justify-content: center;
     width: 1.35rem; height: 1.2rem; padding: 0; border: 0; border-radius: 0.25rem;
@@ -591,7 +612,7 @@ html.dark .fpb-style-field input { color-scheme: dark; }
 }
 .fpb-resize-x { top: 50%; right: -3px; width: 12px; height: 2.5rem; margin-top: -1.25rem; cursor: ew-resize; }
 .fpb-resize-x::after { inset: 0.35rem 3px; }
-.fpb-resize-y { left: 50%; bottom: -3px; width: 2.5rem; height: 12px; margin-left: -1.25rem; cursor: ns-resize; }
+.fpb-resize-y { left: 50%; bottom: -6px; width: 2.5rem; height: 12px; margin-left: -1.25rem; cursor: ns-resize; }
 .fpb-resize-y::after { inset: 3px 0.35rem; }
 .fpb-resize:hover::after { transform: scale(1.25); }
 
@@ -882,6 +903,25 @@ body.fpb-edit-mode .fi-main-ctn {
         opacity: 1;
         position: sticky;
         top: 0;
+    }
+
+    /* Sticky, the selected bar takes a row of its own and covers nothing, so on a phone
+       it stays one strip, which also leaves the larger touch buttons room to fit. */
+    .fpb-block-bar {
+        pointer-events: auto;
+        gap: 0.4rem;
+        padding: 0.2rem 0.4rem;
+        background: rgba(17, 17, 17, 0.8);
+    }
+
+    .fpb-block-bar > .fpb-block-handle,
+    .fpb-block-bar > .fpb-block-label,
+    .fpb-block-bar > .fpb-block-quick,
+    .fpb-block-bar > .fpb-block-tools {
+        min-height: 0;
+        padding: 0;
+        margin-left: 0;
+        background: none;
     }
 
     .fpb-block-handle { display: none; }
