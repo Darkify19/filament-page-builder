@@ -690,6 +690,14 @@ last year leaves a hole in one page, not a 500 across the site. Style tokens are
 <p>Pages that are still a flat list of roots keep working with a hand-rolled loop. The moment an editor
 drops a section, switch to the component.</p>
 
+<h3>When the plugin is not on your default panel</h3>
+<p>A public page is not inside a panel, so the renderer uses the blocks your <strong>default</strong> panel
+registered. If the plugin lives on another panel &mdash; an <code>admin</code> panel beside a default
+<code>app</code> panel, say &mdash; every block is unknown to that one and the page renders empty. Name the
+panel:</p>
+
+<pre><code>&lt;x-page-builder::blocks :blocks="$page-&gt;blocks" panel="admin" /&gt;</code></pre>
+
 <h2 id="authorisation">Authorisation <a class="anchor" href="#authorisation">#</a></h2>
 
 <p>There are two independent layers, and it is worth being clear about which does what.</p>

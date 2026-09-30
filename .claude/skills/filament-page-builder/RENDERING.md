@@ -18,6 +18,7 @@ Related: [BLOCKS.md](BLOCKS.md) (contracts, editables), [STORAGE.md](STORAGE.md)
 | Slot filler | Renders `components/canvas-slot` with the pre-decorated children | Renders `public-block` for each `BlockTree::childrenOf($blocks, $id, $slot)` |
 | Unknown type | A hatched "retired block" placeholder that can be moved and removed | **Skipped, with its whole subtree.** The children of a retired container vanish publicly but stay in the data |
 | Style tokens | `data-fpb-{token}` on `.fpb-block` | `data-fpb-{token}` on `.fpb-el` |
+| Registry | The served panel's | The **default** panel's, unless the tag passes `panel="…"`: `BlockRegistries::using()` pins `current()` for the render and restores it in a `finally` |
 
 ### How a view is invoked (both paths)
 `view()` **containing `::`** → `@include($view, ['data' => $data])`. **Otherwise** → `<x-dynamic-component :component="$view" :data="$data" />`, so `blocks.hero` resolves to `resources/views/components/blocks/hero.blade.php`.
