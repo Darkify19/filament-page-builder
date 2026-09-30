@@ -43,7 +43,7 @@ surfaces read and write the same JSON, so neither owns the content.
 
 ## Installation
 
-Requires **PHP 8.3+** and **Filament 5.x**.
+Requires **PHP 8.3+** and **Filament 4.12.6+ or 5.x**.
 
 ```bash
 composer require carljanzell/filament-page-builder
