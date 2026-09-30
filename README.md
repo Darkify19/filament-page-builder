@@ -43,7 +43,9 @@ surfaces read and write the same JSON, so neither owns the content.
 
 ## Installation
 
-Requires **PHP 8.3+** and **Filament 4.12.6+ or 5.x**.
+Requires **PHP 8.3+** and **Filament 4.12.6+ or 5.x**. On **Filament 3.3.53+**, the same
+command installs the 0.3.x line, built from the
+[`filament-3`](https://github.com/Darkify19/filament-page-builder/tree/filament-3) branch.
 
 ```bash
 composer require carljanzell/filament-page-builder
