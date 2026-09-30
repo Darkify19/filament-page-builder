@@ -5,7 +5,7 @@ description: "Domain expertise for carljanzell/filament-page-builder, a Composer
 
 # Filament Page Builder: package skill
 
-**`carljanzell/filament-page-builder`**: a Laravel package (`type: library`) · PHP ^8.3 · Filament ^4.6|^5 (CI: 4.6.x, latest 4.x, latest 5.x) · Livewire 4 · Alpine (Filament's) · Anime.js 3.2.2 vendored · **no Node, no bundler, ever** · Pest 4 + Orchestra Testbench 11 · MIT licence, installed from Packagist.
+**`carljanzell/filament-page-builder`**: a Laravel package (`type: library`) · PHP ^8.3 · Filament ^4.12.6|^5 (CI: 4.12.x, latest 4.x, latest 5.x) · Livewire 4 · Alpine (Filament's) · Anime.js 3.2.2 vendored · **no Node, no bundler, ever** · Pest 4 + Orchestra Testbench 11 · MIT licence, installed from Packagist.
 
 It adds a full-screen visual canvas beside Filament's `Builder` form field. Both surfaces read and write the same JSON column. **The package owns the mechanism** (registry, canvas, renderer, state handling). **The application owns the content**: block classes, their Blade views, the model and the migration. The package never ships any of those.
 
