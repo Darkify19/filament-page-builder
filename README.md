@@ -226,6 +226,14 @@ keeps a column's blocks in that column — a section is a grid, and without it e
 block becomes its own grid cell. Ship the package stylesheet on the public site, or
 give `.fpb-section` and `.fpb-slot` the equivalent rules in your own theme.
 
+A public page is not inside a panel, so the renderer uses the blocks your **default**
+panel registered. If the plugin is on a different panel, name it, or every block is
+unknown and the page renders empty:
+
+```blade
+<x-page-builder::blocks :blocks="$page->blocks" panel="admin" />
+```
+
 ## Tests
 
 ```bash
