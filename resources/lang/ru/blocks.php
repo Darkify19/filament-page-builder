@@ -167,6 +167,10 @@ return [
         'code_hint' => 'Текст вокруг шорткода показывается как есть.',
         'reference_title' => 'Доступные шорткоды',
         'reference_empty' => 'На этом сайте пока нет шорткодов. Разработчик может добавить их через <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+
+        /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
+        'builtin_year' => 'Текущий год.',
+        'builtin_date' => 'Сегодняшняя дата. Необязательный формат — как PHP записывает даты.',
     ],
     'problems' => [
         'short_map' => 'Короткие ссылки на карты нельзя встроить. В Google Картах выберите Поделиться → Встроить карту, скопируйте HTML и вставьте его сюда.',
