@@ -47,13 +47,20 @@
         >&#8942;&#8942;</button>
         <span class="fpb-block-label">{{ $label }}</span>
         @if ($selected && $block['isKnown'] && ($block['isEditable'] ?? true))
-            {{-- The four quick align buttons speak the panel's language too, so each
-                 tooltip is a translation looked up by its own key rather than a word built
-                 around the raw value. The first element of each pair stays the stored
-                 `text_align` value, which is American-spelled English and does not move. --}}
+            {{-- The same tooltips as the Style tab's alignment buttons, each a whole phrase.
+                 Gluing "Align :side" to a translated side word read "Выравнивание по По
+                 центру" in Russian and "Aligner à Justifier" in French. The keys stay the
+                 stored `text_align` values, which are CSS and do not move. --}}
+            @php
+                $alignButtons = [
+                    'left' => [__('page-builder::style.alignment.align_left'), 'heroicon-m-bars-3-bottom-left'],
+                    'center' => [__('page-builder::style.common.centre'), 'heroicon-m-bars-3'],
+                    'right' => [__('page-builder::style.alignment.align_right'), 'heroicon-m-bars-3-bottom-right'],
+                    'justify' => [__('page-builder::style.common.justify'), 'heroicon-m-bars-4'],
+                ];
+            @endphp
             <span class="fpb-block-quick" role="group" aria-label="{{ __('page-builder::chrome.align_text') }}">
-                @foreach (['left' => ['left', 'heroicon-m-bars-3-bottom-left'], 'center' => ['centre', 'heroicon-m-bars-3'], 'right' => ['right', 'heroicon-m-bars-3-bottom-right'], 'justify' => ['justify', 'heroicon-m-bars-4']] as $side => [$key, $icon])
-                    @php $alignLabel = __('page-builder::chrome.align', ['side' => __('page-builder::chrome.'.$key)]); @endphp
+                @foreach ($alignButtons as $side => [$alignLabel, $icon])
                     <button
                         type="button"
                         title="{{ $alignLabel }}"
@@ -134,7 +141,7 @@
             }) !!}
         @elseif (! $block['isKnown'])
             <p class="fpb-block-retired">
-                {{ __('page-builder::chrome.retired', ['type' => $block['type']]) }}
+                {{ PageBuilder::lineWithMarkup('page-builder::chrome.retired', ['type' => '<code>'.e($block['type']).'</code>']) }}
             </p>
         @endif
     </div>

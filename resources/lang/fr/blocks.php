@@ -27,7 +27,6 @@ return [
         'loop' => 'Boucle',
         'muted' => 'Sans le son',
         'shape' => 'Forme',
-        'height' => 'Hauteur',
         'none' => 'Aucun',
         'small' => 'Petit',
         'medium' => 'Moyen',
@@ -53,6 +52,7 @@ return [
         'bottom' => 'Bas',
         'same_height' => 'Même hauteur',
         'stack' => 'Empiler les colonnes',
+        'stack_mobile' => 'Sur mobile',
         'stack_tablet' => 'Sur tablette et mobile',
         'stack_never' => 'Jamais',
     ],
@@ -144,6 +144,8 @@ return [
         'html_hint' => 'Les shortcodes fonctionnent ici aussi, par exemple [year].',
         'css_hint' => 'S\'applique à toute la page. Commencez vos sélecteurs par une classe qui vous appartient.',
         'js_hint' => 'S\'exécute une fois la page chargée, dans l\'aperçu et sur la page publiée — pas sur le plan de travail. `root` est l\'élément de ce bloc.',
+        'canvas_note' => 'Le JavaScript de ce bloc s\'exécute dans l\'aperçu et sur la page publiée.',
+        'canvas_placeholder' => 'Saisissez du HTML, du CSS et du JavaScript dans le panneau.',
     ],
     'divider' => [
         'label' => 'Séparateur',
@@ -166,7 +168,7 @@ return [
         'code' => 'Shortcode',
         'code_hint' => 'Le texte autour du shortcode est affiché tel qu\'il a été écrit.',
         'reference_title' => 'Shortcodes disponibles',
-        'reference_empty' => 'Ce site n\'a pas encore de shortcodes. Un développeur peut en ajouter avec <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+        'reference_empty' => 'Ce site n\'a pas encore de shortcodes. Un développeur peut en ajouter avec :method.',
 
         /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
         'builtin_year' => 'L\'année en cours.',

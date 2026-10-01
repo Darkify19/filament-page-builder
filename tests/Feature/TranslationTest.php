@@ -1,15 +1,23 @@
 <?php
 
+use CarlJanzell\FilamentPageBuilder\BlockRegistries;
+use CarlJanzell\FilamentPageBuilder\FilamentPageBuilderPlugin;
+use CarlJanzell\FilamentPageBuilder\PageBuilder;
 use CarlJanzell\FilamentPageBuilder\PageBuilderServiceProvider;
+use CarlJanzell\FilamentPageBuilder\Shortcodes;
+use Filament\Panel;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\ServiceProvider;
 
 /**
  * English is the source of truth for this package: every group under resources/lang/en has to
- * exist, and every other locale has to carry exactly its keys. A missing key is the failure
- * mode worth guarding, because Laravel renders it as the literal `page-builder::blocks.
- * heading.label` in the editor, which reads far worse than an untranslated English word.
+ * exist, and every other locale is a translation of it.
+ *
+ * A locale may lag behind. Laravel falls back to the fallback locale key by key, and
+ * `DesignPage::canvasStrings()` does the same for the script's strings, so a new English
+ * string reads in English until someone translates it. A locale may not get ahead, though: a
+ * key English does not have is a typo or a leftover, and nothing would ever read it.
  *
  * Placeholders get their own check: a translator who drops `:label` produces a sentence with a
  * hole in it, and nothing else in the suite would notice.
@@ -20,34 +28,6 @@ const FPB_GROUPS = ['blocks', 'chrome', 'js', 'style'];
 
 /** Locales the package ships translations for. */
 const FPB_LOCALES = ['az', 'de', 'es', 'fr', 'ru', 'tr'];
-
-/**
- * Absolute paths of every shipped translation file, keyed "locale/group".
- *
- * @return array<string, string>
- */
-function translationFiles(): array
-{
-    $root = __DIR__.'/../../resources/lang';
-
-    $files = [];
-
-    foreach (File::directories($root) as $localeDir) {
-        $locale = basename($localeDir);
-
-        foreach (FPB_GROUPS as $group) {
-            $path = $localeDir.'/'.$group.'.php';
-
-            if (File::exists($path)) {
-                $files[$locale.'/'.$group] = $path;
-            }
-        }
-    }
-
-    ksort($files);
-
-    return $files;
-}
 
 /**
  * Read a translation file and flatten it to "dot.key" => value.
@@ -95,6 +75,53 @@ function placeholdersIn(string $value): array
     return Arr::sort($matches[1]);
 }
 
+/**
+ * Every key the package asks for, straight out of the source that asks for it, keyed
+ * "group.key" => [group, key].
+ *
+ * @return array<string, array{string, string}>
+ */
+function referencedKeys(): array
+{
+    $root = dirname(__DIR__, 2);
+    $referenced = [];
+
+    // A key missing from all seven locales still satisfies the per-locale checks below, so
+    // the source is the only thing that can say a key should exist.
+    foreach (['src', 'resources'] as $directory) {
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root.'/'.$directory, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if (! $file->isFile()) {
+                continue;
+            }
+
+            preg_match_all(
+                '/\bpage-builder::(?!components\.)(chrome|blocks|style|js)\.([a-z0-9_.]+)/',
+                (string) file_get_contents($file->getPathname()),
+                $matches
+            );
+
+            foreach ($matches[1] as $index => $group) {
+                $referenced[$group.'.'.$matches[2][$index]] = [$group, $matches[2][$index]];
+            }
+        }
+    }
+
+    // The script asks through `t('key')`, which reads the js group without the prefix.
+    preg_match_all("/\\bt\\('([a-z0-9_]+)'/", (string) file_get_contents($root.'/resources/js/page-builder.js'), $matches);
+
+    foreach ($matches[1] as $key) {
+        $referenced['js.'.$key] = ['js', $key];
+    }
+
+    ksort($referenced);
+
+    return $referenced;
+}
+
 it('ships an English file for every group the package reads', function (string $group): void {
     expect(File::exists(__DIR__.'/../../resources/lang/en/'.$group.'.php'))->toBeTrue();
 })->with(FPB_GROUPS);
@@ -112,17 +139,15 @@ it('ships a file for every group in every locale it claims to support', function
     }
 })->with(FPB_LOCALES);
 
-it('gives every locale exactly the keys English has', function (string $locale, string $group): void {
+it('gives no locale a key English does not have', function (string $locale, string $group): void {
     $root = __DIR__.'/../../resources/lang';
 
     $english = readTranslations($root.'/en/'.$group.'.php');
     $translated = readTranslations($root.'/'.$locale.'/'.$group.'.php');
 
-    $missing = array_diff(array_keys($english), array_keys($translated));
-    $extra = array_diff(array_keys($translated), array_keys($english));
+    $extra = array_values(array_diff(array_keys($translated), array_keys($english)));
 
-    expect($missing)->toBe([], "[{$locale}/{$group}] is missing: ".implode(', ', $missing))
-        ->and($extra)->toBe([], "[{$locale}/{$group}] has keys English does not: ".implode(', ', $extra));
+    expect($extra)->toBe([], "[{$locale}/{$group}] has keys English does not: ".implode(', ', $extra));
 })->with(function (): array {
     return collect(FPB_LOCALES)
         ->crossJoin(FPB_GROUPS)
@@ -137,7 +162,7 @@ it('gives every locale the same placeholders English has', function (string $loc
     $translated = readTranslations($root.'/'.$locale.'/'.$group.'.php');
 
     foreach ($english as $key => $value) {
-        if (! str_contains($value, ':')) {
+        if (! str_contains($value, ':') || ! array_key_exists($key, $translated)) {
             continue;
         }
 
@@ -181,6 +206,54 @@ it('serves the JS group as a whole array for the canvas', function (): void {
         ->and($strings['place_column_n'])->toBeString();
 });
 
+it('falls back to English key by key for a string a locale has not translated yet', function (): void {
+    // A locale that has translated one string of the js group and nothing else.
+    app('translator')->addLines(['js.confirm_delete' => 'Löschen?'], 'xx', 'page-builder');
+    app()->setLocale('xx');
+
+    expect(__('page-builder::js.confirm_delete'))->toBe('Löschen?')
+        ->and(__('page-builder::js.add_here'))->toBe('Add here');
+});
+
+it('fills the gaps in the script\'s strings with English', function (): void {
+    // Asking for the whole group gets the locale's file as it stands, with none of the
+    // key-by-key fallback above, so this is the one place a gap would reach an editor.
+    app('translator')->addLines(['js.confirm_delete' => 'Löschen?'], 'xx', 'page-builder');
+    app()->setLocale('xx');
+
+    $strings = canvas(page())->instance()->canvasStrings();
+
+    expect($strings['confirm_delete'])->toBe('Löschen?')
+        ->and($strings['add_here'])->toBe('Add here')
+        ->and(array_keys($strings))->toEqualCanonicalizing(array_keys(require __DIR__.'/../../resources/lang/en/js.php'));
+});
+
+it('escapes a translated line but not the markup put into it', function (): void {
+    app('translator')->addLines(['chrome.anchor_hint' => '<b>Link</b> with :anchor.'], 'xx', 'page-builder');
+    app()->setLocale('xx');
+
+    expect((string) PageBuilder::lineWithMarkup('page-builder::chrome.anchor_hint', ['anchor' => '<code>#intro</code>']))
+        ->toBe('&lt;b&gt;Link&lt;/b&gt; with <code>#intro</code>.');
+});
+
+it('translates a shortcode description when the list is shown', function (): void {
+    $codes = (new Shortcodes)->register('year', fn (): string => '2026', fn (): string => __('page-builder::blocks.shortcode.builtin_year'));
+
+    app()->setLocale('de');
+
+    expect($codes->all()['year']['description'])->toBe('Das aktuelle Jahr.');
+});
+
+it('describes the built-in shortcodes in the request\'s language, not the one at boot', function (): void {
+    // The panel is built while the application boots, before a locale middleware runs.
+    FilamentPageBuilderPlugin::make()->register(Panel::make()->id('i18n'));
+
+    app()->setLocale('de');
+
+    expect(app(BlockRegistries::class)->for('i18n')->shortcodes()->all()['year']['description'])
+        ->toBe('Das aktuelle Jahr.');
+});
+
 it('publishes its translations so an application can override one sentence', function (): void {
     $paths = ServiceProvider::pathsToPublish(
         PageBuilderServiceProvider::class,
@@ -213,37 +286,33 @@ it('defines every key the package asks for at runtime', function (string $group,
 
     expect(Arr::get($english, $path))->toBeString();
 })->with(function (): array {
-    $root = dirname(__DIR__, 2);
-    $referenced = [];
-
-    // Every key the package asks for, straight out of the source that asks for it. A key
-    // missing from all seven locales still satisfies the parity tests above, so nothing else
-    // in the suite would catch it — this is the only check that does.
-    foreach (['src', 'resources'] as $directory) {
-        $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($root.'/'.$directory, FilesystemIterator::SKIP_DOTS)
-        );
-
-        foreach ($files as $file) {
-            if (! $file->isFile()) {
-                continue;
-            }
-
-            preg_match_all(
-                '/\bpage-builder::(?!components\.)(chrome|blocks|style|js)\.([a-z0-9_.]+)/',
-                (string) file_get_contents($file->getPathname()),
-                $matches
-            );
-
-            foreach ($matches[1] as $index => $group) {
-                $referenced[$group.'.'.$matches[2][$index]] = [$group, $matches[2][$index]];
-            }
-        }
-    }
+    $referenced = referencedKeys();
 
     expect($referenced)->not->toBeEmpty('the scan should find keys the package reads');
 
-    ksort($referenced);
-
     return $referenced;
+});
+
+it('reads every key English defines', function (string $group): void {
+    $unread = array_values(array_diff(
+        array_keys(readTranslations(__DIR__.'/../../resources/lang/en/'.$group.'.php')),
+        array_map(fn (array $pair): string => $pair[1], array_filter(referencedKeys(), fn (array $pair): bool => $pair[0] === $group)),
+    ));
+
+    // A string nothing reads still gets translated six times, and a translator fixing it
+    // changes nothing on screen. Build an option label from a key fragment and this fails,
+    // which is the point: a key the scan cannot see is one a translator cannot trust.
+    expect($unread)->toBe([], "[{$group}] defines keys nothing reads: ".implode(', ', $unread));
+})->with(FPB_GROUPS);
+
+it('shows a shortcode it does not know as code on the canvas', function (): void {
+    PageBuilder::editing('x', 'shortcode');
+
+    try {
+        $html = view('page-builder::components.shortcode', ['data' => ['code' => '[nope] & co']])->render();
+    } finally {
+        PageBuilder::idle();
+    }
+
+    expect($html)->toContain('No registered shortcode found in <code>[nope] &amp; co</code>.');
 });

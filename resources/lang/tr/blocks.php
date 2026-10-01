@@ -27,7 +27,6 @@ return [
         'loop' => 'Döngü',
         'muted' => 'Sessiz',
         'shape' => 'Şekil',
-        'height' => 'Yükseklik',
         'none' => 'Yok',
         'small' => 'Küçük',
         'medium' => 'Orta',
@@ -53,6 +52,7 @@ return [
         'bottom' => 'Alt',
         'same_height' => 'Aynı yükseklik',
         'stack' => 'Sütunları üst üste koy',
+        'stack_mobile' => 'Telefonlarda',
         'stack_tablet' => 'Tablet ve telefonlarda',
         'stack_never' => 'Hiçbir zaman',
     ],
@@ -144,6 +144,8 @@ return [
         'html_hint' => 'Burada da kısa kodlar çalışır, örneğin [year].',
         'css_hint' => 'Tüm sayfaya uygulanır. Seçicilerinizi kendi sınıfınızla başlatın.',
         'js_hint' => 'Sayfa yüklendikten sonra, Önizlemede ve yayımlanan sayfada çalışır — kanvasta değil. `root`, bu bloğun elementidir.',
+        'canvas_note' => 'Bu bloğun JavaScript kodu Önizlemede ve yayımlanan sayfada çalışır.',
+        'canvas_placeholder' => 'Kenar çubuğuna HTML, CSS ve JavaScript yazın.',
     ],
     'divider' => [
         'label' => 'Ayırıcı',
@@ -166,7 +168,7 @@ return [
         'code' => 'Kısa kod',
         'code_hint' => 'Kısa kodun çevresindeki metin yazıldığı gibi gösterilir.',
         'reference_title' => 'Kullanılabilir kısa kodlar',
-        'reference_empty' => 'Bu sitede henüz kısa kod yok. Bir geliştirici <code>FilamentPageBuilderPlugin::shortcode()</code> ile ekleyebilir.',
+        'reference_empty' => 'Bu sitede henüz kısa kod yok. Bir geliştirici :method ile ekleyebilir.',
 
         /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
         'builtin_year' => 'Bulunan yıl.',

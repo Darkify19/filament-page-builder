@@ -27,7 +27,6 @@ return [
         'loop' => 'Schleife',
         'muted' => 'Stumm',
         'shape' => 'Form',
-        'height' => 'Höhe',
         'none' => 'Keine',
         'small' => 'Klein',
         'medium' => 'Mittel',
@@ -53,6 +52,7 @@ return [
         'bottom' => 'Unten',
         'same_height' => 'Gleiche Höhe',
         'stack' => 'Spalten stapeln',
+        'stack_mobile' => 'Auf Telefonen',
         'stack_tablet' => 'Auf Tablets und Telefonen',
         'stack_never' => 'Nie',
     ],
@@ -144,6 +144,8 @@ return [
         'html_hint' => 'Shortcodes funktionieren auch hier, z. B. [year].',
         'css_hint' => 'Gilt für die ganze Seite. Beginnen Sie Ihre Selektoren mit einer eigenen Klasse.',
         'js_hint' => 'Läuft, sobald die Seite geladen ist — in der Vorschau und auf der veröffentlichten Seite, nicht auf der Arbeitsfläche. `root` ist das Element dieses Blocks.',
+        'canvas_note' => 'Das JavaScript dieses Blocks läuft in der Vorschau und auf der veröffentlichten Seite.',
+        'canvas_placeholder' => 'Schreiben Sie links HTML, CSS und JavaScript.',
     ],
     'divider' => [
         'label' => 'Trennlinie',
@@ -166,7 +168,7 @@ return [
         'code' => 'Shortcode',
         'code_hint' => 'Text um den Shortcode herum wird so gezeigt, wie er geschrieben wurde.',
         'reference_title' => 'Verfügbare Shortcodes',
-        'reference_empty' => 'Diese Website hat noch keine Shortcodes. Ein Entwickler kann sie mit <code>FilamentPageBuilderPlugin::shortcode()</code> hinzufügen.',
+        'reference_empty' => 'Diese Website hat noch keine Shortcodes. Ein Entwickler kann sie mit :method hinzufügen.',
 
         /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
         'builtin_year' => 'Das aktuelle Jahr.',

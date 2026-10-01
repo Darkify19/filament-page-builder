@@ -91,6 +91,7 @@ return [
         'video_link_invalid' => 'Introduce un enlace http(s).',
         'start_at' => 'Empezar en',
         'stop_at' => 'Terminar en',
+        'end_placeholder' => 'Fin',
         'play_once' => 'Reproducir una vez',
         'play_once_hint' => 'Repite salvo que esté activado',
         'speed' => 'Velocidad',

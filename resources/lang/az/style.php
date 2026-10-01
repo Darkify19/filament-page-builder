@@ -91,6 +91,7 @@ return [
         'video_link_invalid' => 'http(s) keçidi daxil edin.',
         'start_at' => 'Başlanğıc',
         'stop_at' => 'Son',
+        'end_placeholder' => 'Son',
         'play_once' => 'Bir dəfə oynat',
         'play_once_hint' => 'Bağlı deyilsə təkrarlayır',
         'speed' => 'Sürət',

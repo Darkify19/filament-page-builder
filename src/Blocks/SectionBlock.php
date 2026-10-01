@@ -255,7 +255,7 @@ class SectionBlock implements Container, PageBlock
                     'tablet' => __('page-builder::blocks.section.stack_tablet'),
                     'never' => __('page-builder::blocks.section.stack_never'),
                 ])
-                ->placeholder(__('page-builder::blocks.section.stack_tablet')),
+                ->placeholder(__('page-builder::blocks.section.stack_mobile')),
         ];
     }
 }

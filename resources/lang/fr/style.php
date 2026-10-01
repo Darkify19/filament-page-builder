@@ -91,6 +91,7 @@ return [
         'video_link_invalid' => 'Saisissez un lien http(s).',
         'start_at' => 'Démarrer à',
         'stop_at' => 'Arrêter à',
+        'end_placeholder' => 'Fin',
         'play_once' => 'Lire une fois',
         'play_once_hint' => 'Boucle sauf si cette option est active',
         'speed' => 'Vitesse',
