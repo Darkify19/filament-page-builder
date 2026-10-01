@@ -9,17 +9,17 @@
  * `t()` or the English leaks into every other locale.
  */
 return [
-    'confirm_unsaved' => 'Bu səhifədə yadda saxlanılmamış dəyişikliklər var. Saxlamadan çıxılsın?',
-    'confirm_delete' => 'Bu blok silinsin? Məzmunu da silinəcək.',
+    'confirm_unsaved' => 'Bu səhifədə saxlanılmamış dəyişikliklər var. Yadda saxlamadan çıxmaq istəyirsiniz?',
+    'confirm_delete' => 'Bu bloku silmək istəyirsiniz? Onun məzmunu da silinəcək.',
     'move_here' => 'Bura köçür',
     'add_here' => 'Bura əlavə et',
     'place_page' => 'səhifə',
     'place_column' => 'sütun',
-    'place_column_n' => ':number. sütun',
-    'drag_resize_columns' => 'Sütunları ölçüləndirmək üçün sürüşdürün',
+    'place_column_n' => 'sütun :number',
+    'drag_resize_columns' => 'Sütunların ölçüsünü dəyişmək üçün sürüşdürün',
     'full_width' => 'Tam en',
-    'percent_wide' => '%:percent en',
-    'pixels_tall' => ':height px hündürlük',
-    'notice_style_copied' => 'Stil kopyalandı. Başqa bir bloka sağ klikləyin → Stili yapışdır.',
-    'notice_copied' => 'Kopyalandı. :keys ilə bura və ya başqa səhifəyə yapışdırın.',
+    'percent_wide' => ':percent% enində',
+    'pixels_tall' => ':height piksel hündürlüyündə',
+    'notice_style_copied' => 'Üslub kopyalandı. Başqa bloka sağ klikləyin → Üslubu yapışdır.',
+    'notice_copied' => 'Kopyalandı. Burada və ya başqa səhifədə :keys düymələri ilə yapışdırın.',
 ];
