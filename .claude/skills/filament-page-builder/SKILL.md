@@ -67,6 +67,7 @@ resources/
   views/components/canvas-block.blade.php  # one canvas block: bar/handle/tools, editing() context, retired placeholder
   views/components/canvas-slot.blade.php   # a slot's children on the canvas
   views/components/{section,text,image,button,spacer,divider}.blade.php  # primitive views (@include'd view paths)
+  lang/{en,az,de,es,fr,ru,tr}/    # namespace `page-builder`: chrome · blocks · style · js. en is the source of truth
   js/page-builder.js              # Alpine `pageBuilderCanvas`: native DnD, keyboard, inline edit, motion, morph hook
   js/vendor/anime.min.js          # optional; the canvas works without it
   css/page-builder.css            # chrome, primitives, token rules, full-screen .fi-* overrides, dark-mode vars
@@ -123,6 +124,14 @@ ROADMAP.md                        # staged plan (Stage 0/B-text/C done; rich tex
 | Shortcuts are ignored while typing | — | ⌘S flushes then saves. ⌘Z / ⇧⌘Z return while `isTyping()` |
 
 ---
+
+## Translations
+
+- Keys live in `resources/lang/{locale}/{chrome,blocks,style,js}.php` under the `page-builder` namespace; apps override with `vendor:publish --tag=page-builder-translations`.
+- **English is the source of truth.** Add every new string there first. A locale may lag (Laravel falls back key by key) but may not hold a key English lacks. `TranslationTest` enforces that, matching placeholders, that every key the source asks for exists in English, and that **every English key is read somewhere**. So never build a key from a fragment (`'chrome.'.$side`): the scan can't see it, and gluing translated words broke grammar in ru/fr.
+- The JS reads its strings from `data-fpb-i18n`, filled by `DesignPage::canvasStrings()` (the locale laid over English, because a whole-group `__()` has no per-key fallback). Use `this.t('key', {name})`; a key missing from English shows as `page-builder.js.key`.
+- A line that needs markup (`<code>`) goes through `PageBuilder::lineWithMarkup($key, ['name' => '<code>…</code>'])`: the line is escaped, only the replacement isn't. Never put HTML in a translation, and never pass HTML through `{{ __() }}` (it prints the tags).
+- Technical values (`px`, `16:9`, `0.5×`, anchor ids like `intro`) are never translated.
 
 ## Global Conventions
 

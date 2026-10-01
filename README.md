@@ -235,6 +235,34 @@ unknown and the page renders empty:
 <x-page-builder::blocks :blocks="$page->blocks" panel="admin" />
 ```
 
+## Translations
+
+The editor follows the application's locale. It ships in English, Azerbaijani, French,
+German, Russian, Spanish and Turkish. A string a locale has not translated yet shows in
+English.
+
+To change a sentence, publish the files and edit your copy:
+
+```bash
+php artisan vendor:publish --tag=page-builder-translations
+```
+
+They land in `lang/vendor/page-builder`. Laravel merges your copy over the package's own,
+key by key, so keep only the strings you change.
+
+Your blocks' labels are your application's strings. `label()` and `description()` run on
+every request, so they can return `__('…')`. Shortcodes are registered while the panel is
+built, before the request's locale is set, so give a translated description as a closure:
+
+```php
+FilamentPageBuilderPlugin::make()
+    ->shortcode('news', fn (): string => view('news.latest')->render(), fn (): string => __('The latest news.'));
+```
+
+A new locale is welcome as a pull request: copy `resources/lang/en` to
+`resources/lang/{locale}` and translate it. Keep the `:placeholders`. The suite checks that a
+locale has no key English lacks, and that it keeps every placeholder.
+
 ## Tests
 
 ```bash

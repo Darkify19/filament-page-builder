@@ -9,7 +9,7 @@
     $src = EmbedBlock::src($data, $editing);
     $ratio = array_key_exists($data['ratio'] ?? '', EmbedBlock::RATIOS) ? $data['ratio'] : '16-9';
     $height = is_numeric($data['height'] ?? null) ? max(80, min(2000, (int) $data['height'])) : null;
-    $title = filled($data['title'] ?? null) ? $data['title'] : 'Embedded content';
+    $title = filled($data['title'] ?? null) ? $data['title'] : __('page-builder::blocks.embed.title_placeholder');
 @endphp
 
 @if ($src)
@@ -24,7 +24,7 @@
         ></iframe>
     </div>
     @if ($editing && ($data['autoplay'] ?? false))
-        <p class="fpb-embed-note">Autoplay is paused while you edit. It plays on the published page.</p>
+        <p class="fpb-embed-note">{{ __('page-builder::blocks.embed.canvas_autoplay_note') }}</p>
     @endif
 @elseif ($editing && filled($data['url'] ?? null))
     <div class="fpb-embed-placeholder">{{ EmbedUrl::problem($data['url']) }}</div>

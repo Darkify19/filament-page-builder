@@ -59,14 +59,14 @@ class StyleSchema
 
     protected static function typography(): Section
     {
-        return self::tab(Section::make('Text')->icon('heroicon-m-language'))->schema([
+        return self::tab(Section::make(__('page-builder::style.tabs.typography'))->icon('heroicon-m-language'))->schema([
             ToggleButtons::make('text_align')
-                ->label('Alignment')
+                ->label(__('page-builder::style.alignment.label'))
                 ->options([
-                    'left' => 'Left',
-                    'center' => 'Center',
-                    'right' => 'Right',
-                    'justify' => 'Justify',
+                    'left' => __('page-builder::style.common.left'),
+                    'center' => __('page-builder::style.common.centre'),
+                    'right' => __('page-builder::style.common.right'),
+                    'justify' => __('page-builder::style.common.justify'),
                 ])
                 ->icons([
                     'left' => 'heroicon-m-bars-3-bottom-left',
@@ -75,67 +75,67 @@ class StyleSchema
                     'justify' => 'heroicon-m-bars-4',
                 ])
                 ->tooltips([
-                    'left' => 'Align left',
-                    'center' => 'Centre',
-                    'right' => 'Align right',
-                    'justify' => 'Justify',
+                    'left' => __('page-builder::style.alignment.align_left'),
+                    'center' => __('page-builder::style.common.centre'),
+                    'right' => __('page-builder::style.alignment.align_right'),
+                    'justify' => __('page-builder::style.common.justify'),
                 ])
                 ->hiddenButtonLabels()
                 ->inline()
                 ->grouped()
                 ->live(),
             ColorPicker::make('text_color')
-                ->label('Colour')
+                ->label(__('page-builder::style.common.colour'))
                 ->live(debounce: 500),
             Grid::make(2)->schema([
                 TextInput::make('font_size')
-                    ->label('Size')
+                    ->label(__('page-builder::style.common.size'))
                     ->numeric()
                     ->minValue(1)
                     ->maxValue(400)
-                    ->placeholder('Auto')
+                    ->placeholder(__('page-builder::style.common.auto'))
                     ->live(onBlur: true),
                 Select::make('font_size_unit')
-                    ->label('Unit')
+                    ->label(__('page-builder::style.common.unit'))
                     ->options(array_combine(['px', 'rem', 'em', 'vw'], ['px', 'rem', 'em', 'vw']))
                     ->placeholder('px')
                     ->live(),
                 Select::make('font_weight')
-                    ->label('Weight')
+                    ->label(__('page-builder::style.weight.label'))
                     ->options([
-                        '300' => 'Light',
-                        '400' => 'Regular',
-                        '500' => 'Medium',
-                        '600' => 'Semibold',
-                        '700' => 'Bold',
-                        '800' => 'Extra bold',
-                        '900' => 'Black',
+                        '300' => __('page-builder::style.weight.light'),
+                        '400' => __('page-builder::style.weight.regular'),
+                        '500' => __('page-builder::style.weight.medium'),
+                        '600' => __('page-builder::style.weight.semibold'),
+                        '700' => __('page-builder::style.weight.bold'),
+                        '800' => __('page-builder::style.weight.extra_bold'),
+                        '900' => __('page-builder::style.weight.black'),
                     ])
-                    ->placeholder('Auto')
+                    ->placeholder(__('page-builder::style.common.auto'))
                     ->live(),
                 TextInput::make('line_height')
-                    ->label('Line height')
+                    ->label(__('page-builder::style.common.line_height'))
                     ->numeric()
                     ->minValue(0.5)
                     ->maxValue(5)
                     ->step(0.05)
-                    ->placeholder('Auto')
+                    ->placeholder(__('page-builder::style.common.auto'))
                     ->live(onBlur: true),
                 TextInput::make('letter_spacing')
-                    ->label('Letter spacing')
+                    ->label(__('page-builder::style.common.letter_spacing'))
                     ->numeric()
                     ->suffix('px')
                     ->placeholder('0')
                     ->live(onBlur: true),
                 Select::make('text_transform')
-                    ->label('Case')
+                    ->label(__('page-builder::style.case.label'))
                     ->options([
                         'uppercase' => 'UPPERCASE',
                         'lowercase' => 'lowercase',
-                        'capitalize' => 'Capitalise',
-                        'none' => 'As typed',
+                        'capitalize' => __('page-builder::style.case.capitalise'),
+                        'none' => __('page-builder::style.case.as_typed'),
                     ])
-                    ->placeholder('Auto')
+                    ->placeholder(__('page-builder::style.common.auto'))
                     ->live(),
             ]),
         ]);
@@ -145,35 +145,40 @@ class StyleSchema
     {
         $is = fn (string ...$types): Closure => fn (Get $get): bool => in_array($get('background_type'), $types, true);
 
-        return self::tab(Section::make('Background')->icon('heroicon-m-swatch'))->schema([
+        return self::tab(Section::make(__('page-builder::style.tabs.background'))->icon('heroicon-m-swatch'))->schema([
             ToggleButtons::make('background_type')
                 ->hiddenLabel()
                 ->options([
-                    'none' => 'None',
-                    'color' => 'Colour',
-                    'gradient' => 'Gradient',
-                    'image' => 'Image',
-                    'video' => 'Video',
+                    'none' => __('page-builder::style.background.type_none'),
+                    'color' => __('page-builder::style.background.type_colour'),
+                    'gradient' => __('page-builder::style.background.type_gradient'),
+                    'image' => __('page-builder::style.background.type_image'),
+                    'video' => __('page-builder::style.background.type_video'),
                 ])
                 ->inline()
                 ->live(),
             ColorPicker::make('background_color')
-                ->label(fn (Get $get): string => $get('background_type') === 'color' ? 'Colour' : 'Fallback colour')
+                ->label(fn (Get $get): string => $get('background_type') === 'color'
+                    ? __('page-builder::style.common.colour')
+                    : __('page-builder::style.background.fallback_colour'))
                 ->rgba()
                 ->visible($is('color', 'image', 'video'))
                 ->live(debounce: 500),
             Grid::make(2)
                 ->visible($is('gradient'))
                 ->schema([
-                    ColorPicker::make('gradient_from')->label('From')->rgba()->live(debounce: 500),
-                    ColorPicker::make('gradient_to')->label('To')->rgba()->live(debounce: 500),
+                    ColorPicker::make('gradient_from')->label(__('page-builder::style.background.from'))->rgba()->live(debounce: 500),
+                    ColorPicker::make('gradient_to')->label(__('page-builder::style.background.to'))->rgba()->live(debounce: 500),
                     Select::make('gradient_type')
-                        ->label('Type')
-                        ->options(['linear' => 'Linear', 'radial' => 'Radial'])
-                        ->placeholder('Linear')
+                        ->label(__('page-builder::style.background.type'))
+                        ->options([
+                            'linear' => __('page-builder::style.background.linear'),
+                            'radial' => __('page-builder::style.background.radial'),
+                        ])
+                        ->placeholder(__('page-builder::style.background.linear'))
                         ->live(),
                     TextInput::make('gradient_angle')
-                        ->label('Direction')
+                        ->label(__('page-builder::style.background.direction'))
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(360)
@@ -182,7 +187,7 @@ class StyleSchema
                         ->live(onBlur: true),
                 ]),
             FileUpload::make('background_image')
-                ->label('Image')
+                ->label(__('page-builder::style.background.image'))
                 ->image()
                 ->disk('public')
                 ->directory('pages')
@@ -191,68 +196,86 @@ class StyleSchema
                 ->visible($is('image'))
                 ->schema([
                     Select::make('background_size')
-                        ->label('Fit')
-                        ->options(['cover' => 'Fill', 'contain' => 'Fit inside', 'auto' => 'Actual size'])
-                        ->placeholder('Fill')
+                        ->label(__('page-builder::style.background.fit'))
+                        ->options([
+                            'cover' => __('page-builder::style.background.fit_fill'),
+                            'contain' => __('page-builder::style.background.fit_contain'),
+                            'auto' => __('page-builder::style.background.fit_auto'),
+                        ])
+                        ->placeholder(__('page-builder::style.background.fit_fill'))
                         ->live(),
                     Select::make('background_position')
-                        ->label('Focus')
-                        ->options(array_combine(
-                            ['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right'],
-                            ['Centre', 'Top', 'Bottom', 'Left', 'Right', 'Top left', 'Top right', 'Bottom left', 'Bottom right'],
-                        ))
-                        ->placeholder('Centre')
+                        ->label(__('page-builder::style.background.focus'))
+                        ->options([
+                            'center' => __('page-builder::style.background.focus_centre'),
+                            'top' => __('page-builder::style.background.focus_top'),
+                            'bottom' => __('page-builder::style.background.focus_bottom'),
+                            'left' => __('page-builder::style.background.focus_left'),
+                            'right' => __('page-builder::style.background.focus_right'),
+                            'top left' => __('page-builder::style.background.focus_top_left'),
+                            'top right' => __('page-builder::style.background.focus_top_right'),
+                            'bottom left' => __('page-builder::style.background.focus_bottom_left'),
+                            'bottom right' => __('page-builder::style.background.focus_bottom_right'),
+                        ])
+                        ->placeholder(__('page-builder::style.background.focus_centre'))
                         ->live(),
-                    Toggle::make('background_fixed')->label('Parallax')->live(),
-                    Toggle::make('background_repeat')->label('Tile')->live(),
+                    Toggle::make('background_fixed')->label(__('page-builder::style.background.parallax'))->live(),
+                    Toggle::make('background_repeat')->label(__('page-builder::style.background.tile'))->live(),
                 ]),
             FileUpload::make('background_video')
-                ->label('Video file')
+                ->label(__('page-builder::style.background.video_file'))
                 ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'])
                 ->maxSize(51200)
                 ->disk('public')
                 ->directory('pages')
                 ->visible($is('video')),
             TextInput::make('background_video_url')
-                ->label('…or a video link')
-                ->placeholder('YouTube, Vimeo or an .mp4 link')
+                ->label(__('page-builder::style.background.video_link'))
+                ->placeholder(__('page-builder::style.background.video_link_placeholder'))
                 ->visible($is('video'))
                 ->live(onBlur: true)
                 ->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
                     if (filled($value) && BlockStyle::url($value) === null) {
-                        $fail('Enter an http(s) link.');
+                        $fail(__('page-builder::style.background.video_link_invalid'));
                     }
                 }),
             Grid::make(2)
                 ->visible($is('video'))
                 ->schema([
                     TextInput::make('video_start')
-                        ->label('Start at')
+                        ->label(__('page-builder::style.background.start_at'))
                         ->placeholder('0:00')
-                        ->helperText('Seconds or m:ss')
+                        ->helperText(__('page-builder::style.background.time_hint'))
                         ->formatStateUsing(fn (mixed $state): ?string => self::timecode($state))
                         ->dehydrateStateUsing(fn (mixed $state): ?int => EmbedUrl::seconds($state))
                         ->live(onBlur: true),
                     TextInput::make('video_end')
-                        ->label('Stop at')
-                        ->placeholder('End')
+                        ->label(__('page-builder::style.background.stop_at'))
+                        ->placeholder(__('page-builder::style.background.end_placeholder'))
                         ->formatStateUsing(fn (mixed $state): ?string => self::timecode($state))
                         ->dehydrateStateUsing(fn (mixed $state): ?int => EmbedUrl::seconds($state))
                         ->live(onBlur: true),
-                    Toggle::make('video_once')->label('Play once')->helperText('Loops unless this is on')->live(),
+                    Toggle::make('video_once')->label(__('page-builder::style.background.play_once'))->helperText(__('page-builder::style.background.play_once_hint'))->live(),
                     Select::make('video_rate')
-                        ->label('Speed')
-                        ->options(['0.5' => '0.5×', '0.75' => '0.75×', '1' => 'Normal', '1.25' => '1.25×', '1.5' => '1.5×', '2' => '2×'])
-                        ->placeholder('Normal')
+                        ->label(__('page-builder::style.background.speed'))
+                        ->options([
+                            '0.5' => '0.5×',
+                            '0.75' => '0.75×',
+                            '1' => __('page-builder::style.background.speed_normal'),
+                            '1.25' => '1.25×',
+                            '1.5' => '1.5×',
+                            '2' => '2×',
+                        ])
+                        ->placeholder(__('page-builder::style.background.speed_normal'))
                         ->live(),
                 ]),
-            Fieldset::make('Overlay')
+            Fieldset::make(__('page-builder::style.background.overlay'))
                 ->visible($is('image', 'video'))
                 ->columns(2)
                 ->schema([
-                    ColorPicker::make('overlay_color')->label('Colour')->rgba()->live(debounce: 500),
+                    ColorPicker::make('overlay_color')->label(__('page-builder::style.common.colour'))->rgba()->live(debounce: 500),
                     TextInput::make('overlay_opacity')
-                        ->label('Strength')
+                        ->label(__('page-builder::style.background.strength'))
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(100)
@@ -265,10 +288,10 @@ class StyleSchema
 
     protected static function border(): Section
     {
-        return self::tab(Section::make('Border and shadow')->icon('heroicon-m-stop')->collapsed())->schema([
+        return self::tab(Section::make(__('page-builder::style.tabs.border'))->icon('heroicon-m-stop')->collapsed())->schema([
             Grid::make(2)->schema([
                 TextInput::make('border_width')
-                    ->label('Border')
+                    ->label(__('page-builder::style.border.border'))
                     ->numeric()
                     ->minValue(0)
                     ->maxValue(50)
@@ -276,13 +299,18 @@ class StyleSchema
                     ->placeholder('0')
                     ->live(onBlur: true),
                 Select::make('border_style')
-                    ->label('Line')
-                    ->options(['solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted', 'double' => 'Double'])
-                    ->placeholder('Solid')
+                    ->label(__('page-builder::style.border.line'))
+                    ->options([
+                        'solid' => __('page-builder::style.border.solid'),
+                        'dashed' => __('page-builder::style.border.dashed'),
+                        'dotted' => __('page-builder::style.border.dotted'),
+                        'double' => __('page-builder::style.border.double'),
+                    ])
+                    ->placeholder(__('page-builder::style.border.solid'))
                     ->live(),
-                ColorPicker::make('border_color')->label('Border colour')->rgba()->live(debounce: 500),
+                ColorPicker::make('border_color')->label(__('page-builder::style.border.border_colour'))->rgba()->live(debounce: 500),
                 TextInput::make('border_radius')
-                    ->label('Rounded corners')
+                    ->label(__('page-builder::style.border.rounded_corners'))
                     ->numeric()
                     ->minValue(0)
                     ->maxValue(500)
@@ -290,12 +318,17 @@ class StyleSchema
                     ->placeholder('0')
                     ->live(onBlur: true),
                 Select::make('shadow')
-                    ->label('Shadow')
-                    ->options(['sm' => 'Subtle', 'md' => 'Medium', 'lg' => 'Large', 'xl' => 'Dramatic'])
-                    ->placeholder('None')
+                    ->label(__('page-builder::style.border.shadow'))
+                    ->options([
+                        'sm' => __('page-builder::style.border.shadow_subtle'),
+                        'md' => __('page-builder::style.border.shadow_medium'),
+                        'lg' => __('page-builder::style.border.shadow_large'),
+                        'xl' => __('page-builder::style.border.shadow_dramatic'),
+                    ])
+                    ->placeholder(__('page-builder::style.common.none'))
                     ->live(),
                 TextInput::make('opacity')
-                    ->label('Opacity')
+                    ->label(__('page-builder::style.border.opacity'))
                     ->numeric()
                     ->minValue(0)
                     ->maxValue(100)
@@ -308,9 +341,9 @@ class StyleSchema
 
     protected static function spacing(): Section
     {
-        return self::tab(Section::make('Spacing')->icon('heroicon-m-arrows-pointing-out'))->schema([
-            self::sides('padding', 'Padding — space inside', 0),
-            self::sides('margin', 'Margin — space outside', -2000),
+        return self::tab(Section::make(__('page-builder::style.tabs.spacing'))->icon('heroicon-m-arrows-pointing-out'))->schema([
+            self::sides('padding', __('page-builder::style.spacing.padding'), 0),
+            self::sides('margin', __('page-builder::style.spacing.margin'), -2000),
         ]);
     }
 
@@ -318,7 +351,7 @@ class StyleSchema
     {
         $inputs = array_map(
             fn (string $side): TextInput => TextInput::make("{$property}_{$side}")
-                ->label(ucfirst($side))
+                ->label(self::sideLabel($side))
                 ->numeric()
                 ->minValue($min)
                 ->maxValue(2000)
@@ -332,7 +365,7 @@ class StyleSchema
             ->schema([
                 ...$inputs,
                 Select::make("{$property}_unit")
-                    ->label('Unit')
+                    ->label(__('page-builder::style.common.unit'))
                     ->inlineLabel()
                     ->options(array_combine(BlockStyle::SPACING_UNITS, BlockStyle::SPACING_UNITS))
                     ->placeholder('px')
@@ -343,50 +376,54 @@ class StyleSchema
 
     protected static function size(): Section
     {
-        return self::tab(Section::make('Size and position')->icon('heroicon-m-arrows-right-left'))->schema([
+        return self::tab(Section::make(__('page-builder::style.tabs.size'))->icon('heroicon-m-arrows-right-left'))->schema([
             Grid::make(2)->schema([
                 TextInput::make('width')
-                    ->label('Width')
+                    ->label(__('page-builder::style.common.width'))
                     ->numeric()
                     ->minValue(1)
                     ->maxValue(4000)
-                    ->placeholder('Auto')
-                    ->helperText('Or drag the right edge on the page.')
+                    ->placeholder(__('page-builder::style.common.auto'))
+                    ->helperText(__('page-builder::style.size.width_hint'))
                     ->live(onBlur: true),
                 Select::make('width_unit')
-                    ->label('Unit')
+                    ->label(__('page-builder::style.common.unit'))
                     ->options(['%' => '%', 'px' => 'px', 'rem' => 'rem', 'vw' => 'vw'])
                     ->placeholder('%')
                     ->live(),
                 TextInput::make('max_width')
-                    ->label('Max width')
+                    ->label(__('page-builder::style.common.max_width'))
                     ->numeric()
                     ->minValue(1)
                     ->maxValue(4000)
-                    ->placeholder('None')
+                    ->placeholder(__('page-builder::style.common.none'))
                     ->live(onBlur: true),
                 Select::make('max_width_unit')
-                    ->label('Unit')
+                    ->label(__('page-builder::style.common.unit'))
                     ->options(['px' => 'px', 'rem' => 'rem', '%' => '%', 'vw' => 'vw'])
                     ->placeholder('px')
                     ->live(),
                 TextInput::make('min_height')
-                    ->label('Min height')
+                    ->label(__('page-builder::style.common.min_height'))
                     ->numeric()
                     ->minValue(0)
                     ->maxValue(4000)
-                    ->placeholder('Auto')
-                    ->helperText('Or drag the bottom edge.')
+                    ->placeholder(__('page-builder::style.common.auto'))
+                    ->helperText(__('page-builder::style.size.min_height_hint'))
                     ->live(onBlur: true),
                 Select::make('min_height_unit')
-                    ->label('Unit')
+                    ->label(__('page-builder::style.common.unit'))
                     ->options(['px' => 'px', 'rem' => 'rem', 'vh' => 'vh'])
                     ->placeholder('px')
                     ->live(),
             ]),
             ToggleButtons::make('element_align')
-                ->label('Position when narrower than its column')
-                ->options(['left' => 'Left', 'center' => 'Centre', 'right' => 'Right'])
+                ->label(__('page-builder::style.size.position'))
+                ->options([
+                    'left' => __('page-builder::style.common.left'),
+                    'center' => __('page-builder::style.common.centre'),
+                    'right' => __('page-builder::style.common.right'),
+                ])
                 ->inline()
                 ->grouped()
                 ->live(),
@@ -395,13 +432,30 @@ class StyleSchema
 
     protected static function developer(): Section
     {
-        return self::tab(Section::make('For developers')->icon('heroicon-m-code-bracket')->collapsed())->schema([
+        return self::tab(Section::make(__('page-builder::style.tabs.developer'))->icon('heroicon-m-code-bracket')->collapsed())->schema([
             TextInput::make('css_class')
-                ->label('CSS classes')
-                ->placeholder('hero-title fade-in')
-                ->helperText('Target this block from Custom code or your own stylesheet.')
+                ->label(__('page-builder::style.developer.css_classes'))
+                ->placeholder(__('page-builder::style.developer.css_classes_placeholder'))
+                ->helperText(__('page-builder::style.developer.css_classes_hint'))
                 ->live(onBlur: true),
         ]);
+    }
+
+    /**
+     * The label on one edge of a spacing fieldset: "Top", "Right", and so on.
+     *
+     * These were `ucfirst($side)` on the raw side name, which is English baked into the
+     * schema and would have kept saying "Top" under every locale but English.
+     */
+    protected static function sideLabel(string $side): string
+    {
+        return match ($side) {
+            'top' => __('page-builder::style.common.top'),
+            'bottom' => __('page-builder::style.common.bottom'),
+            'left' => __('page-builder::style.common.left'),
+            'right' => __('page-builder::style.common.right'),
+            default => ucfirst($side),
+        };
     }
 
     protected static function timecode(mixed $seconds): ?string

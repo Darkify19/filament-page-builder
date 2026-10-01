@@ -21,6 +21,24 @@ class SpacerBlock implements PageBlock
      */
     public const PRESETS = ['sm' => 16, 'md' => 32, 'lg' => 64, 'xl' => 96];
 
+    /**
+     * The preset heights as labels, translated.
+     *
+     * The same four keys as PRESETS, so which one a block stores is unaffected by the
+     * locale it was authored in. Only the words move.
+     *
+     * @return array<string, string>
+     */
+    public static function heights(): array
+    {
+        return [
+            'sm' => __('page-builder::blocks.common.small'),
+            'md' => __('page-builder::blocks.common.medium'),
+            'lg' => __('page-builder::blocks.common.large'),
+            'xl' => __('page-builder::blocks.common.extra_large'),
+        ];
+    }
+
     public static function type(): string
     {
         return 'spacer';
@@ -28,7 +46,7 @@ class SpacerBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'Spacer';
+        return __('page-builder::blocks.spacer.label');
     }
 
     public static function icon(): ?string
@@ -43,7 +61,7 @@ class SpacerBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'Empty space between blocks. Drag its bottom edge to resize.';
+        return __('page-builder::blocks.spacer.description');
     }
 
     public static function view(): string
@@ -103,25 +121,20 @@ class SpacerBlock implements PageBlock
     {
         return [
             ToggleButtons::make('height')
-                ->label('Height')
-                ->options([
-                    'sm' => 'Small',
-                    'md' => 'Medium',
-                    'lg' => 'Large',
-                    'xl' => 'Extra large',
-                ])
+                ->label(__('page-builder::blocks.spacer.height'))
+                ->options(self::heights())
                 ->default('md')
                 ->inline()
                 ->live()
                 ->afterStateUpdated(fn (Set $set): mixed => $set('size', null)),
             TextInput::make('size')
-                ->label('Exact height')
+                ->label(__('page-builder::blocks.spacer.size'))
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(2000)
                 ->suffix('px')
-                ->placeholder('Use the preset')
-                ->helperText('Or drag the bottom edge of the spacer on the page.'),
+                ->placeholder(__('page-builder::blocks.spacer.size_placeholder'))
+                ->helperText(__('page-builder::blocks.spacer.size_hint')),
         ];
     }
 }

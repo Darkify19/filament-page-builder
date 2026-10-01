@@ -17,7 +17,7 @@ class ButtonBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'label' => Editable::text()->placeholder('Button label'),
+            'label' => Editable::text()->placeholder(__('page-builder::blocks.button.placeholder')),
         ];
     }
 
@@ -28,7 +28,7 @@ class ButtonBlock implements InlineEditable, PageBlock
 
     public static function label(): string
     {
-        return 'Button';
+        return __('page-builder::blocks.button.label');
     }
 
     public static function icon(): ?string
@@ -43,7 +43,7 @@ class ButtonBlock implements InlineEditable, PageBlock
 
     public static function description(): string
     {
-        return 'A link that looks like a button.';
+        return __('page-builder::blocks.button.description');
     }
 
     public static function view(): string
@@ -72,7 +72,7 @@ class ButtonBlock implements InlineEditable, PageBlock
         return [
             TextInput::make('label')->maxLength(255),
             TextInput::make('url')
-                ->label('Link')
+                ->label(__('page-builder::blocks.button.link'))
                 ->maxLength(2048)
                 ->rule(function (): Closure {
                     return function (string $attribute, mixed $value, Closure $fail): void {
@@ -81,7 +81,7 @@ class ButtonBlock implements InlineEditable, PageBlock
                         }
 
                         if (! is_string($value) || ! SafeUrl::allows($value)) {
-                            $fail('Enter an http(s), mailto, tel, hash or same-site path. javascript: and data: links are not allowed.');
+                            $fail(__('page-builder::blocks.button.link_invalid'));
                         }
                     };
                 }),

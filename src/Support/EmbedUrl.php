@@ -154,10 +154,10 @@ class EmbedUrl
         $url = strtolower(self::fromSnippet($input));
 
         return match (true) {
-            str_contains($url, 'maps.app.goo.gl'), str_contains($url, 'goo.gl/maps') => 'Short map links cannot be embedded. In Google Maps choose Share → Embed a map, copy the HTML and paste it here.',
-            str_contains($url, '/maps/dir') => 'Directions cannot be embedded. Search for the place instead and paste that link, or use Share → Embed a map.',
-            str_contains($url, 'forms.gle') => 'Short form links cannot be embedded. Open the form and paste the full docs.google.com address.',
-            default => 'Paste a link from YouTube, Vimeo, Google Maps, Docs, Forms, Slides or Drive, Facebook, Spotify or Canva — or the whole "Embed" code a site gives you.',
+            str_contains($url, 'maps.app.goo.gl'), str_contains($url, 'goo.gl/maps') => __('page-builder::blocks.problems.short_map'),
+            str_contains($url, '/maps/dir') => __('page-builder::blocks.problems.directions'),
+            str_contains($url, 'forms.gle') => __('page-builder::blocks.problems.short_form'),
+            default => __('page-builder::blocks.problems.unknown'),
         };
     }
 

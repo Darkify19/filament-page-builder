@@ -23,7 +23,7 @@
     {!! $markup !!}
     @if (trim($js) !== '')
         @if ($editing)
-            <p class="fpb-code-note">⚡ This block's JavaScript runs in Preview and on the published page.</p>
+            <p class="fpb-code-note">⚡ {{ __('page-builder::blocks.code.canvas_note') }}</p>
         @else
             <script>
                 (function (root) {
@@ -40,6 +40,6 @@
         @endif
     @endif
     @if ($editing && trim($html.$css.$js) === '')
-        <p class="fpb-placeholder">Write HTML, CSS and JavaScript in the sidebar.</p>
+        <p class="fpb-placeholder">{{ __('page-builder::blocks.code.canvas_placeholder') }}</p>
     @endif
 </div>

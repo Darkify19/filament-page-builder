@@ -53,7 +53,7 @@ for member in $members; do
 done
 
 echo "3. data-* attributes the JS reads through el.dataset"
-for key in $(grep -oE 'dataset\.[a-zA-Z]+' "$JS" | sed 's/^dataset\.//' | sort -u); do
+for key in $(grep -oE 'dataset\??\.[a-zA-Z0-9]+' "$JS" | sed -E 's/^dataset\??\.//' | sort -u); do
     attr="data-$(printf '%s' "$key" | perl -pe 's/([A-Z])/-\l$1/g')"
     if grep -rqF "$attr" src resources/views || grep -qE "dataset\.${key} *=" "$JS"; then
         ok "$attr"

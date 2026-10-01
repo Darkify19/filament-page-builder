@@ -25,6 +25,8 @@ Related: [RENDERING.md](RENDERING.md) (how the view is invoked, and slots), [CAN
 | `category(): string` | Palette group. `layout` / `content` / `design` / `blocks` have labels, anything else gets `ucfirst()` | `'blocks'` |
 | `description(): string` | Optional one-line palette subtitle | `null` |
 
+**Every string is translated at request time.** The shipped blocks return `__('page-builder::blocks.…')` from `label()`, `description()`, `editables()` placeholders and `schema()`. Never cache a label across requests or store it: it is in the language of the request that produced it. Option labels come from methods (`EmbedBlock::ratios()`, `ListBlock::markers()`, `SectionBlock::gaps()`); the English constants (`RATIOS`, `MARKERS`, `GAPS`) stay because the views use their **keys** as the allow-list. Shortcode descriptions are registered at panel build, before the locale middleware, so they're closures resolved in `Shortcodes::all()`. Translation layout and rules: SKILL.md → Translations.
+
 **`Contracts\Container`** (implemented by `SectionBlock`) requires `slots(array $data): array` (the slot names *this instance* exposes, derived from its data) and `defaults()`. The canvas drop targets, the outline and the public renderer all ask `slots()`, so changing a section's column count is a data change and not a new type.
 
 ---

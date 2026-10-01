@@ -53,7 +53,7 @@ trait UsesClipboard
     public function pasteBlocks(string $payload, ?string $targetId = null, string $placement = 'after'): ?string
     {
         if (strlen($payload) > $this->clipboardLimit) {
-            return $this->refusePaste('That is too much to paste at once.');
+            return $this->refusePaste(__('page-builder::chrome.paste_too_much'));
         }
 
         $decoded = json_decode($payload, true);
@@ -65,7 +65,7 @@ trait UsesClipboard
         $incoming = BlockTree::hydrate($decoded['blocks']);
 
         if ($incoming === [] || count($incoming) > $this->clipboardBlockLimit) {
-            return $this->refusePaste('There is nothing on the clipboard this page can use.');
+            return $this->refusePaste(__('page-builder::chrome.paste_nothing_usable'));
         }
 
         foreach ($incoming as $block) {
@@ -73,14 +73,14 @@ trait UsesClipboard
                 $definition = $this->registry()->find($block['type']);
                 $label = $definition === null ? $block['type'] : $definition::label();
 
-                return $this->refusePaste("You can't add {$label} blocks, so this can't be pasted.");
+                return $this->refusePaste(__('page-builder::chrome.paste_not_allowed', ['label' => $label]));
             }
         }
 
         [$parent, $slot, $at] = $this->placementFor($targetId, $placement);
 
         if (! $this->canPlace($parent, $slot)) {
-            return $this->refusePaste('Blocks cannot be pasted there.');
+            return $this->refusePaste(__('page-builder::chrome.paste_not_there'));
         }
 
         $map = [];
@@ -127,7 +127,7 @@ trait UsesClipboard
         }
 
         if (($parent === null ? 0 : BlockTree::depthOf($this->blocks, $parent)) + $height > BlockTree::MAX_DEPTH) {
-            return $this->refusePaste('That would nest blocks too deeply here.');
+            return $this->refusePaste(__('page-builder::chrome.paste_too_deep'));
         }
 
         $next = $this->blocks;
@@ -164,7 +164,7 @@ trait UsesClipboard
         }
 
         if (strlen($text) > $this->clipboardLimit) {
-            return $this->refusePaste('That is too much to paste at once.');
+            return $this->refusePaste(__('page-builder::chrome.paste_too_much'));
         }
 
         $isMarkup = (bool) preg_match('/^<(?:!doctype|html|head|body|div|section|style|script|svg|main|header|footer|article|nav|span|a|p|h[1-6]|ul|ol|img|button|form|table|canvas|link)\b/i', $text)
