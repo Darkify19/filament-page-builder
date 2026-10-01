@@ -15,7 +15,7 @@ class HeadingBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'text' => Editable::text()->placeholder('Write a heading'),
+            'text' => Editable::text()->placeholder(__('page-builder::blocks.heading.placeholder')),
         ];
     }
 
@@ -26,7 +26,11 @@ class HeadingBlock implements InlineEditable, PageBlock
 
     public static function label(): string
     {
-        return 'Heading';
+        // A stand-in for the package's own heading block, so it reads its copy from the same
+        // place. An application shipping its own block translates it the same way; leaving
+        // this hardcoded would mean the canvas is the one surface the tests never exercise in
+        // another language.
+        return __('page-builder::blocks.heading.label');
     }
 
     public static function icon(): ?string

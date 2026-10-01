@@ -33,7 +33,7 @@ class CodeBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'Custom code';
+        return __('page-builder::blocks.code.label');
     }
 
     public static function icon(): ?string
@@ -48,7 +48,7 @@ class CodeBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'Your own HTML, CSS and JavaScript — for animations and custom designs.';
+        return __('page-builder::blocks.code.description');
     }
 
     public static function view(): string
@@ -79,26 +79,26 @@ class CodeBlock implements PageBlock
     public static function schema(): array
     {
         return [
-            Tabs::make('Code')
+            Tabs::make(__('page-builder::blocks.code.tabs'))
                 ->contained(false)
                 ->tabs([
-                    Tab::make('HTML')->schema([
+                    Tab::make(__('page-builder::blocks.code.tab_html'))->schema([
                         CodeEditor::make('html')
                             ->hiddenLabel()
                             ->language(Language::Html),
-                        Text::make('Shortcodes work here too, e.g. [year].'),
+                        Text::make(__('page-builder::blocks.code.html_hint')),
                     ]),
-                    Tab::make('CSS')->schema([
+                    Tab::make(__('page-builder::blocks.code.tab_css'))->schema([
                         CodeEditor::make('css')
                             ->hiddenLabel()
                             ->language(Language::Css),
-                        Text::make('Applies to the whole page. Start your selectors with a class of your own.'),
+                        Text::make(__('page-builder::blocks.code.css_hint')),
                     ]),
-                    Tab::make('JavaScript')->schema([
+                    Tab::make(__('page-builder::blocks.code.tab_js'))->schema([
                         CodeEditor::make('js')
                             ->hiddenLabel()
                             ->language(Language::JavaScript),
-                        Text::make('Runs once the page has loaded, in Preview and on the published page — not on the canvas. `root` is this block\'s element.'),
+                        Text::make(__('page-builder::blocks.code.js_hint')),
                     ]),
                 ]),
         ];

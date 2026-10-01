@@ -24,14 +24,20 @@ use Throwable;
 class Shortcodes
 {
     /**
-     * @var array<string, array{callback: Closure, description: ?string, example: ?string}>
+     * @var array<string, array{callback: Closure, description: string|Closure|null, example: ?string}>
      */
     protected array $codes = [];
 
     /**
+     * A description can be a closure so that it is translated when the list is shown.
+     * Shortcodes are registered while the panel is built, which is before any middleware
+     * has set the request's locale; a string translated then is in the app's default
+     * locale for every editor.
+     *
      * @param  callable(array<int|string, string>, ?string): mixed  $callback
+     * @param  string|(Closure(): ?string)|null  $description
      */
-    public function register(string $name, callable $callback, ?string $description = null, ?string $example = null): static
+    public function register(string $name, callable $callback, string|Closure|null $description = null, ?string $example = null): static
     {
         $name = strtolower($name);
 
@@ -59,7 +65,7 @@ class Shortcodes
     public function all(): array
     {
         return array_map(
-            fn (array $code): array => ['description' => $code['description'], 'example' => $code['example']],
+            fn (array $code): array => ['description' => value($code['description']), 'example' => $code['example']],
             $this->codes,
         );
     }

@@ -31,6 +31,24 @@ class VideoBlock implements PageBlock
         '21-9' => '21:9',
     ];
 
+    /**
+     * RATIOS, translated. As with the embed block, only "Natural" is a word; the rest are
+     * numbers that mean the same thing in every locale.
+     *
+     * @return array<string, string>
+     */
+    public static function ratios(): array
+    {
+        return [
+            '' => __('page-builder::blocks.video.ratio_natural'),
+            '16-9' => '16:9',
+            '4-3' => '4:3',
+            '1-1' => '1:1',
+            '9-16' => '9:16',
+            '21-9' => '21:9',
+        ];
+    }
+
     public static function type(): string
     {
         return 'video';
@@ -38,7 +56,7 @@ class VideoBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'Video';
+        return __('page-builder::blocks.video.label');
     }
 
     public static function icon(): ?string
@@ -53,7 +71,7 @@ class VideoBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'An uploaded video with start time, autoplay and loop.';
+        return __('page-builder::blocks.video.description');
     }
 
     public static function view(): string
@@ -89,46 +107,46 @@ class VideoBlock implements PageBlock
     {
         return [
             FileUpload::make('src')
-                ->label('Video file')
+                ->label(__('page-builder::blocks.video.src'))
                 ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'])
                 ->maxSize(51200)
                 ->disk('public')
                 ->directory('pages'),
             TextInput::make('url')
-                ->label('…or a link to a video file')
-                ->placeholder('https://example.com/clip.mp4')
-                ->helperText('For YouTube or Vimeo, use the Embed block.')
+                ->label(__('page-builder::blocks.video.url'))
+                ->placeholder(__('page-builder::blocks.video.url_placeholder'))
+                ->helperText(__('page-builder::blocks.video.url_hint'))
                 ->maxLength(2048)
                 ->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
                     if (filled($value) && BlockStyle::url($value) === null) {
-                        $fail('Enter an http(s) link to an .mp4 or .webm file.');
+                        $fail(__('page-builder::blocks.video.url_invalid'));
                     }
                 }),
             FileUpload::make('poster')
-                ->label('Cover image')
+                ->label(__('page-builder::blocks.video.poster'))
                 ->image()
                 ->disk('public')
                 ->directory('pages'),
             Grid::make(2)->schema([
                 TextInput::make('start')
-                    ->label('Start at')
+                    ->label(__('page-builder::blocks.common.start_at'))
                     ->placeholder('0:00')
-                    ->helperText('Seconds or m:ss')
+                    ->helperText(__('page-builder::blocks.common.time_hint'))
                     ->rule(fn (): Closure => self::timeRule()),
                 TextInput::make('end')
-                    ->label('Stop at')
-                    ->placeholder('End')
+                    ->label(__('page-builder::blocks.common.stop_at'))
+                    ->placeholder(__('page-builder::blocks.common.end_placeholder'))
                     ->rule(fn (): Closure => self::timeRule()),
             ]),
             Grid::make(2)->schema([
-                Toggle::make('autoplay')->label('Autoplay')->helperText('Plays muted'),
-                Toggle::make('loop')->label('Loop'),
-                Toggle::make('muted')->label('Muted'),
-                Toggle::make('controls')->label('Show controls')->default(true),
+                Toggle::make('autoplay')->label(__('page-builder::blocks.common.autoplay'))->helperText(__('page-builder::blocks.common.autoplay_hint')),
+                Toggle::make('loop')->label(__('page-builder::blocks.common.loop')),
+                Toggle::make('muted')->label(__('page-builder::blocks.common.muted')),
+                Toggle::make('controls')->label(__('page-builder::blocks.video.controls'))->default(true),
             ]),
             Select::make('ratio')
-                ->label('Shape')
-                ->options(self::RATIOS)
+                ->label(__('page-builder::blocks.common.shape'))
+                ->options(self::ratios())
                 ->default(''),
         ];
     }
@@ -137,7 +155,7 @@ class VideoBlock implements PageBlock
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
             if (filled($value) && EmbedUrl::seconds($value) === null) {
-                $fail('Use seconds (90) or minutes and seconds (1:30).');
+                $fail(__('page-builder::blocks.common.time_invalid'));
             }
         };
     }
