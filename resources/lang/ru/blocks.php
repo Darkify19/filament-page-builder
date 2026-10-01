@@ -27,7 +27,6 @@ return [
         'loop' => 'Повтор',
         'muted' => 'Без звука',
         'shape' => 'Форма',
-        'height' => 'Высота',
         'none' => 'Нет',
         'small' => 'Маленький',
         'medium' => 'Средний',
@@ -53,6 +52,7 @@ return [
         'bottom' => 'По низу',
         'same_height' => 'Одинаковая высота',
         'stack' => 'Сложить колонки',
+        'stack_mobile' => 'На телефонах',
         'stack_tablet' => 'На планшетах и телефонах',
         'stack_never' => 'Никогда',
     ],
@@ -144,6 +144,8 @@ return [
         'html_hint' => 'Здесь тоже работают шорткоды, например [year].',
         'css_hint' => 'Применяется ко всей странице. Начинайте селекторы с собственного класса.',
         'js_hint' => 'Выполняется после загрузки страницы — в предпросмотре и на опубликованной странице, но не на холсте. `root` — элемент этого блока.',
+        'canvas_note' => 'JavaScript этого блока выполняется в предпросмотре и на опубликованной странице.',
+        'canvas_placeholder' => 'Напишите HTML, CSS и JavaScript на боковой панели.',
     ],
     'divider' => [
         'label' => 'Разделитель',
@@ -166,7 +168,7 @@ return [
         'code' => 'Шорткод',
         'code_hint' => 'Текст вокруг шорткода показывается как есть.',
         'reference_title' => 'Доступные шорткоды',
-        'reference_empty' => 'На этом сайте пока нет шорткодов. Разработчик может добавить их через <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+        'reference_empty' => 'На этом сайте пока нет шорткодов. Разработчик может добавить их через :method.',
 
         /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
         'builtin_year' => 'Текущий год.',

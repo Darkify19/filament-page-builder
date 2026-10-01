@@ -32,7 +32,6 @@ return [
         'loop' => 'Loop',
         'muted' => 'Muted',
         'shape' => 'Shape',
-        'height' => 'Height',
         'none' => 'None',
         'small' => 'Small',
         'medium' => 'Medium',
@@ -59,6 +58,7 @@ return [
         'bottom' => 'Bottom',
         'same_height' => 'Same height',
         'stack' => 'Stack the columns',
+        'stack_mobile' => 'On phones',
         'stack_tablet' => 'On tablets and phones',
         'stack_never' => 'Never',
     ],
@@ -159,6 +159,8 @@ return [
         'html_hint' => 'Shortcodes work here too, e.g. [year].',
         'css_hint' => 'Applies to the whole page. Start your selectors with a class of your own.',
         'js_hint' => 'Runs once the page has loaded, in Preview and on the published page — not on the canvas. `root` is this block’s element.',
+        'canvas_note' => 'This block’s JavaScript runs in Preview and on the published page.',
+        'canvas_placeholder' => 'Write HTML, CSS and JavaScript in the sidebar.',
     ],
 
     'divider' => [
@@ -184,7 +186,7 @@ return [
         'code' => 'Shortcode',
         'code_hint' => 'Text around the shortcode is shown as written.',
         'reference_title' => 'Available shortcodes',
-        'reference_empty' => 'This site has no shortcodes yet. A developer can add them with <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+        'reference_empty' => 'This site has no shortcodes yet. A developer can add them with :method.',
 
         /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
         'builtin_year' => 'The current year.',

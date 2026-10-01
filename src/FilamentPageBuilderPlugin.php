@@ -50,7 +50,7 @@ class FilamentPageBuilderPlugin implements Plugin
     protected bool $customStyles = true;
 
     /**
-     * @var array<string, array{callback: callable, description: ?string, example: ?string}>
+     * @var array<string, array{callback: callable, description: string|Closure|null, example: ?string}>
      */
     protected array $shortcodes = [];
 
@@ -191,9 +191,14 @@ class FilamentPageBuilderPlugin implements Plugin
      * markup: a string, an Htmlable or a View. Its output is trusted, so escape anything
      * it echoes back from `$attributes`.
      *
+     * Pass the description as a closure, `fn () => __('…')`, to have it translated into
+     * the editor's language: this runs while the panel is built, before the request's
+     * locale is known.
+     *
      * @param  callable(array<int|string, string>, ?string): mixed  $callback
+     * @param  string|(Closure(): ?string)|null  $description
      */
-    public function shortcode(string $name, callable $callback, ?string $description = null, ?string $example = null): static
+    public function shortcode(string $name, callable $callback, string|Closure|null $description = null, ?string $example = null): static
     {
         $this->shortcodes[$name] = [
             'callback' => $callback,
@@ -278,7 +283,7 @@ class FilamentPageBuilderPlugin implements Plugin
             ],
             'align' => [
                 'start' => __('page-builder::chrome.tokens.start'),
-                'center' => __('page-builder::chrome.centre'),
+                'center' => __('page-builder::chrome.tokens.centre'),
                 'end' => __('page-builder::chrome.tokens.end'),
             ],
         ];
@@ -365,11 +370,11 @@ class FilamentPageBuilderPlugin implements Plugin
 
         if ($this->includeLayoutBlocks) {
             $shortcodes
-                ->register('year', fn (): string => date('Y'), __('page-builder::blocks.shortcode.builtin_year'), '[year]')
+                ->register('year', fn (): string => date('Y'), fn (): string => __('page-builder::blocks.shortcode.builtin_year'), '[year]')
                 ->register(
                     'date',
                     fn (array $attributes): string => e(now()->format(is_string($attributes['format'] ?? null) ? $attributes['format'] : 'F j, Y')),
-                    __('page-builder::blocks.shortcode.builtin_date'),
+                    fn (): string => __('page-builder::blocks.shortcode.builtin_date'),
                     '[date format="F j, Y"]',
                 );
         }

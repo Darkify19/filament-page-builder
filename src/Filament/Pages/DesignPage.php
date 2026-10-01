@@ -196,14 +196,28 @@ abstract class DesignPage extends Page
      * view forgot to pass is English on a screen nobody asked for it on, whereas a key it
      * does not use yet costs a few hundred bytes.
      *
+     * Asking for a whole group returns that locale's file as it stands, without the
+     * key-by-key fallback a single `__()` gets. So the locale is laid over English (and
+     * over the application's fallback locale): a string not translated yet reads in
+     * English, as it does everywhere else in the editor, instead of as the key `t()`
+     * shows for a gap.
+     *
      * @return array<string, string>
      */
     public function canvasStrings(): array
     {
-        return array_map(
-            fn (mixed $value): string => (string) $value,
-            __('page-builder::js'),
-        );
+        $translator = app('translator');
+        $strings = [];
+
+        foreach (array_unique(['en', $translator->getFallback(), $translator->getLocale()]) as $locale) {
+            $group = $translator->get('page-builder::js', [], $locale, false);
+
+            if (is_array($group)) {
+                $strings = array_replace($strings, $group);
+            }
+        }
+
+        return array_map(fn (mixed $value): string => (string) $value, $strings);
     }
 
     protected function authorizeAccess(): void

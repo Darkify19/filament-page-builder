@@ -3,9 +3,10 @@
 /**
  * The editor shell: toolbar, palette, outline, inspector, context menu, preview.
  *
- * English here is the source of truth. Every other locale is a translation of this file
- * and the test suite fails when one of them drifts behind, because a missing key does not
- * fall back — it renders as the raw dotted path on a screen an editor is looking at.
+ * English here is the source of truth. Every other locale is a translation of this file.
+ * A key a locale has not translated yet falls back to this English, key by key, so a new
+ * string can ship before its translations do. A locale may not invent keys of its own,
+ * though, and the test suite holds it to that.
  *
  * `:name` placeholders are replaced with `:key` or `:key, ['name' => …]` from the caller.
  * Keep them: an aria-label that reads "Move Heading" is useful, "Move " is not.
@@ -49,7 +50,9 @@ return [
 
     /**
      * Palette group headings. A block may declare any category it likes; one this package
-     * does not know about falls back to the application's own label rather than a key.
+     * does not know about is headed by its own name, capitalised.
+     *
+     * `layout` and `content` are also the inspector tabs of the same names.
      */
     'layout' => 'Layout',
     'content' => 'Content',
@@ -78,9 +81,7 @@ return [
 
     /* ── Inspector ───────────────────────────────────────── */
 
-    'content' => 'Content',
     'style' => 'Style',
-    'layout' => 'Layout',
     'page' => 'Page',
     'settings' => 'Settings',
     'inside' => '↑ Inside :parent',
@@ -95,7 +96,6 @@ return [
     'default' => 'Default',
     'anchor' => 'Anchor',
     'anchor_hint' => 'Link to this block with :anchor.',
-    'anchor_example' => '#intro',
 
     /**
      * Labels for the preset buttons in Brand presets.
@@ -112,6 +112,7 @@ return [
         'wide' => 'Wide',
         'full' => 'Full',
         'start' => 'Start',
+        'centre' => 'Centre',
         'end' => 'End',
     ],
 
@@ -126,6 +127,7 @@ return [
     'shortcut_select' => 'Select',
     'shortcut_delete' => 'Delete',
     'shortcut_deselect' => 'Deselect',
+    'shortcut_right_click' => 'Right-click',
     'shortcut_more_actions' => 'More actions',
 
     /* ── Context menu ────────────────────────────────────── */
@@ -150,7 +152,6 @@ return [
     'drag_to_move' => 'Drag to move',
     'move' => 'Move :label',
     'align_text' => 'Align text',
-    'align' => 'Align :side',
     'edit' => 'Edit',
     'edit_named' => 'Edit :label',
     'move_named_up' => 'Move :label up',
@@ -163,17 +164,15 @@ return [
     'resize_width' => 'Drag to change the width. Double-click to reset.',
     'resize_height' => 'Drag to change the height. Double-click to reset.',
 
-    /* ── Alignment sides, for the quick buttons ──────────── */
-
-    'left' => 'Left',
-    'centre' => 'Centre',
-    'right' => 'Right',
-    'justify' => 'Justify',
-
     /* ── Notifications ───────────────────────────────────── */
 
     'duplicate_ids_repaired' => 'Repaired duplicate block ids. Save to keep both copies.',
     'saved_elsewhere' => 'This page was saved elsewhere. Reload to avoid overwriting those changes.',
+    'paste_too_much' => 'That is too much to paste at once.',
+    'paste_nothing_usable' => 'There is nothing on the clipboard this page can use.',
+    'paste_not_allowed' => 'You can\'t add :label blocks, so this can\'t be pasted.',
+    'paste_not_there' => 'Blocks cannot be pasted there.',
+    'paste_too_deep' => 'That would nest blocks too deeply here.',
 
     /* ── Accessible names for landmarks ──────────────────── */
 

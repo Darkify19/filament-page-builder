@@ -99,6 +99,7 @@ return [
         'video_link_invalid' => 'Enter an http(s) link.',
         'start_at' => 'Start at',
         'stop_at' => 'Stop at',
+        'end_placeholder' => 'End',
         'play_once' => 'Play once',
         'play_once_hint' => 'Loops unless this is on',
         'speed' => 'Speed',

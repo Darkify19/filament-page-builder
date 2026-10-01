@@ -179,6 +179,7 @@ footer { margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--ru
       <li><a href="#authorisation">Authorisation</a></li>
       <li><a href="#state">State normalisation</a></li>
       <li><a href="#styling">Styling the canvas</a></li>
+      <li><a href="#translations">Translations</a></li>
       <li><a href="#assets">Assets &amp; no bundler</a></li>
     </ol>
 
@@ -789,6 +790,36 @@ it is included inside the canvas so blocks render exactly as they do publicly:</
 <code>.fpb-canvas</code>, <code>.fpb-block</code>, <code>.fpb-block-bar</code>, <code>.fpb-block-body</code>,
 <code>.fpb-drop-marker</code>, <code>.fpb-chrome</code>, <code>.fpb-toolbar-actions</code>, <code>.fpb-inspector</code>, <code>.fpb-empty</code>.
 The selected block carries <code>data-selected="true"</code>.</p>
+
+<h2 id="translations">Translations <a class="anchor" href="#translations">#</a></h2>
+
+<p>The editor follows the application&rsquo;s locale: the toolbar, palette, inspector, notifications and the
+canvas script&rsquo;s own messages. It ships in English, Azerbaijani, French, German, Russian, Spanish and
+Turkish. A string a locale has not translated yet shows in English.</p>
+
+<p>To change a sentence, publish the files and edit your copy in <code>lang/vendor/page-builder</code>. Laravel
+merges it over the package&rsquo;s own key by key, so keep only the strings you change.</p>
+
+<pre><code>php artisan vendor:publish --tag=page-builder-translations</code></pre>
+
+<h4>Your own blocks</h4>
+<p>A block&rsquo;s label, description and form are your application&rsquo;s strings. <code>label()</code>,
+<code>description()</code> and <code>schema()</code> run on every request, so they can return <code>__('&hellip;')</code>.
+Do not cache a label across requests: it is in the language of the request that produced it.</p>
+
+<p>Shortcodes are registered while the panel is built, before any middleware has set the request&rsquo;s locale.
+Give a translated description as a closure, and it is translated when the inspector lists it:</p>
+
+<pre><code>FilamentPageBuilderPlugin::make()
+    -&gt;shortcode('news', fn (): string =&gt; view('news.latest')-&gt;render(), fn (): string =&gt; __('The latest news.'))</code></pre>
+
+<div class="note">
+  <span class="note-t">Not every translation has had a native speaker</span>
+  <p style="margin-bottom:0">If a sentence reads wrong in your language, a pull request is welcome. The same goes for a
+  new locale: copy <code>resources/lang/en</code> to <code>resources/lang/{locale}</code>. Keep the
+  <code>:placeholders</code>. The suite fails a locale with a key English lacks, or one that drops a
+  placeholder.</p>
+</div>
 
 <h2 id="assets">Assets, and why there is no bundler <a class="anchor" href="#assets">#</a></h2>
 

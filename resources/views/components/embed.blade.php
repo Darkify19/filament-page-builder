@@ -9,7 +9,7 @@
     $src = EmbedBlock::src($data, $editing);
     $ratio = array_key_exists($data['ratio'] ?? '', EmbedBlock::RATIOS) ? $data['ratio'] : '16-9';
     $height = is_numeric($data['height'] ?? null) ? max(80, min(2000, (int) $data['height'])) : null;
-    $title = filled($data['title'] ?? null) ? $data['title'] : 'Embedded content';
+    $title = filled($data['title'] ?? null) ? $data['title'] : __('page-builder::blocks.embed.title_placeholder');
 @endphp
 
 @if ($src)

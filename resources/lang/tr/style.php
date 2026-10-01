@@ -91,6 +91,7 @@ return [
         'video_link_invalid' => 'Bir http(s) bağlantısı girin.',
         'start_at' => 'Başlangıç',
         'stop_at' => 'Bitiş',
+        'end_placeholder' => 'Bitiş',
         'play_once' => 'Bir kez oynat',
         'play_once_hint' => 'Kapalıysa tekrarlar',
         'speed' => 'Hız',

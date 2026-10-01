@@ -68,12 +68,12 @@
                 />
 
                 @if ($formEditorUrl = $this->formEditorUrl())
-                    {{-- Resolved before @js() on purpose. Livewire's morph-aware Blade
-                         precompiler balances parentheses across the whole template, and a
-                         nested __() inside @js() leaves it unbalanced, which makes the
-                         precompiler swallow the rest of the view and blow up its regex. --}}
+                    {{-- Blade does not compile directives inside a component's attributes, so
+                         @js() here reached the browser as the text "@js(...)": the handler
+                         failed to compile and the link opened with no warning. Encode it here
+                         and echo it, which component attributes do support. --}}
                     @php
-                        $formEditorColumnsWarning = __('page-builder::chrome.form_editor_columns_warning');
+                        $formEditorColumnsWarning = \Illuminate\Support\Js::from(__('page-builder::chrome.form_editor_columns_warning'));
                     @endphp
                     <span class="fpb-desktop-only">
                         @if ($this->hasNestedBlocks())
@@ -82,7 +82,7 @@
                                 href="{{ $formEditorUrl }}"
                                 color="gray"
                                 size="sm"
-                                x-on:click="if (! confirm(@js($formEditorColumnsWarning))) { $event.preventDefault() }"
+                                x-on:click="if (! confirm({{ $formEditorColumnsWarning }})) { $event.preventDefault() }"
                             >
                                 {{ __('page-builder::chrome.form_editor') }}
                             </x-filament::button>
@@ -247,7 +247,7 @@
                 <dt>↑ ↓</dt><dd>{{ __('page-builder::chrome.shortcut_select') }}</dd>
                 <dt>⌫</dt><dd>{{ __('page-builder::chrome.shortcut_delete') }}</dd>
                 <dt>Esc</dt><dd>{{ __('page-builder::chrome.shortcut_deselect') }}</dd>
-                <dt>Right-click</dt><dd>{{ __('page-builder::chrome.shortcut_more_actions') }}</dd>
+                <dt>{{ __('page-builder::chrome.shortcut_right_click') }}</dt><dd>{{ __('page-builder::chrome.shortcut_more_actions') }}</dd>
             </dl>
         </aside>
 
@@ -410,10 +410,13 @@
                             type="text"
                             class="fpb-search-input"
                             wire:model.blur="blockAnchor"
-                            placeholder="{{ __('page-builder::chrome.anchor_example') }}"
+                            placeholder="intro"
                             autocomplete="off"
                         >
-                        <small class="fpb-panel-hint">{{ __('page-builder::chrome.anchor_hint', ['anchor' => '<code>'.e(__('page-builder::chrome.anchor_example')).'</code>']) }}</small>
+                        {{-- "intro" is an id, not a word: it must start with an ASCII letter
+                             (BlockTree::isValidAnchor), so it is not translated, and the field
+                             takes it without the #, which only the link uses. --}}
+                        <small class="fpb-panel-hint">{{ \CarlJanzell\FilamentPageBuilder\PageBuilder::lineWithMarkup('page-builder::chrome.anchor_hint', ['anchor' => '<code>#intro</code>']) }}</small>
                     </label>
                 </div>
             @else

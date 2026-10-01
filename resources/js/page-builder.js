@@ -253,9 +253,10 @@ document.addEventListener('alpine:init', () => {
         /**
          * A translated string from the `js` group, with `:name` replaced.
          *
-         * Returns the key when the locale is missing it. That is deliberately visible:
-         * a page-builder.strings.confirm_delete in the middle of a confirm dialog is a bug
-         * report, where a blank or a silent English fallback would be a slow one.
+         * The server has already filled any gap in the locale with English, so a key
+         * missing here is missing from English too: the source asks for a string nobody
+         * wrote. That shows as the key, page-builder.js.confirm_delete, which is a bug
+         * report rather than a blank.
          */
         t(key, replace = {}) {
             const value = this.strings?.[key] ?? `page-builder.js.${key}`;

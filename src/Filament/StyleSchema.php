@@ -207,17 +207,17 @@ class StyleSchema
                     Select::make('background_position')
                         ->label(__('page-builder::style.background.focus'))
                         ->options([
-                            'center' => __('page-builder::style.common.centre'),
-                            'top' => __('page-builder::style.common.top'),
-                            'bottom' => __('page-builder::style.common.bottom'),
-                            'left' => __('page-builder::style.common.left'),
-                            'right' => __('page-builder::style.common.right'),
+                            'center' => __('page-builder::style.background.focus_centre'),
+                            'top' => __('page-builder::style.background.focus_top'),
+                            'bottom' => __('page-builder::style.background.focus_bottom'),
+                            'left' => __('page-builder::style.background.focus_left'),
+                            'right' => __('page-builder::style.background.focus_right'),
                             'top left' => __('page-builder::style.background.focus_top_left'),
                             'top right' => __('page-builder::style.background.focus_top_right'),
                             'bottom left' => __('page-builder::style.background.focus_bottom_left'),
                             'bottom right' => __('page-builder::style.background.focus_bottom_right'),
                         ])
-                        ->placeholder(__('page-builder::style.common.centre'))
+                        ->placeholder(__('page-builder::style.background.focus_centre'))
                         ->live(),
                     Toggle::make('background_fixed')->label(__('page-builder::style.background.parallax'))->live(),
                     Toggle::make('background_repeat')->label(__('page-builder::style.background.tile'))->live(),
@@ -251,7 +251,7 @@ class StyleSchema
                         ->live(onBlur: true),
                     TextInput::make('video_end')
                         ->label(__('page-builder::style.background.stop_at'))
-                        ->placeholder(__('page-builder::style.common.none'))
+                        ->placeholder(__('page-builder::style.background.end_placeholder'))
                         ->formatStateUsing(fn (mixed $state): ?string => self::timecode($state))
                         ->dehydrateStateUsing(fn (mixed $state): ?int => EmbedUrl::seconds($state))
                         ->live(onBlur: true),

@@ -79,7 +79,10 @@ class ShortcodeBlock implements PageBlock
         $codes = PageBuilder::shortcodes()->all();
 
         if ($codes === []) {
-            return new HtmlString('<span class="fpb-shortcode-ref">'.__('page-builder::blocks.shortcode.reference_empty').'</span>');
+            return new HtmlString('<span class="fpb-shortcode-ref">'.PageBuilder::lineWithMarkup(
+                'page-builder::blocks.shortcode.reference_empty',
+                ['method' => '<code>FilamentPageBuilderPlugin::shortcode()</code>'],
+            ).'</span>');
         }
 
         $items = collect($codes)->map(fn (array $code, string $name): string => '<li><code>'.e($code['example'] ?? "[{$name}]").'</code>'

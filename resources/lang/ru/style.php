@@ -91,6 +91,7 @@ return [
         'video_link_invalid' => 'Введите ссылку http(s).',
         'start_at' => 'Начало',
         'stop_at' => 'Конец',
+        'end_placeholder' => 'Конец',
         'play_once' => 'Воспроизвести один раз',
         'play_once_hint' => 'Иначе повторяется',
         'speed' => 'Скорость',

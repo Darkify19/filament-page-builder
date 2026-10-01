@@ -27,7 +27,6 @@ return [
         'loop' => 'Repetir',
         'muted' => 'Sin sonido',
         'shape' => 'Forma',
-        'height' => 'Alto',
         'none' => 'Ninguno',
         'small' => 'Pequeño',
         'medium' => 'Mediano',
@@ -53,6 +52,7 @@ return [
         'bottom' => 'Abajo',
         'same_height' => 'Misma altura',
         'stack' => 'Apilar las columnas',
+        'stack_mobile' => 'En móviles',
         'stack_tablet' => 'En tabletas y móviles',
         'stack_never' => 'Nunca',
     ],
@@ -144,6 +144,8 @@ return [
         'html_hint' => 'Aquí también funcionan los shortcodes, por ejemplo [year].',
         'css_hint' => 'Se aplica a toda la página. Empieza tus selectores por una clase propia.',
         'js_hint' => 'Se ejecuta una vez cargada la página, en la vista previa y en la página publicada, no en el lienzo. `root` es el elemento de este bloque.',
+        'canvas_note' => 'El JavaScript de este bloque se ejecuta en la vista previa y en la página publicada.',
+        'canvas_placeholder' => 'Escribe HTML, CSS y JavaScript en el panel lateral.',
     ],
     'divider' => [
         'label' => 'Separador',
@@ -166,7 +168,7 @@ return [
         'code' => 'Shortcode',
         'code_hint' => 'El texto alrededor del shortcode se muestra tal cual.',
         'reference_title' => 'Shortcodes disponibles',
-        'reference_empty' => 'Este sitio aún no tiene shortcodes. Un desarrollador puede añadirlos con <code>FilamentPageBuilderPlugin::shortcode()</code>.',
+        'reference_empty' => 'Este sitio aún no tiene shortcodes. Un desarrollador puede añadirlos con :method.',
 
         /** Descriptions for the shortcodes the package registers itself, listed beside their examples. */
         'builtin_year' => 'El año actual.',
