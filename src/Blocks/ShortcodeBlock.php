@@ -20,7 +20,7 @@ class ShortcodeBlock implements PageBlock
 
     public static function label(): string
     {
-        return 'Shortcode';
+        return __('page-builder::blocks.shortcode.label');
     }
 
     public static function icon(): ?string
@@ -35,7 +35,7 @@ class ShortcodeBlock implements PageBlock
 
     public static function description(): string
     {
-        return 'Live data from the site, e.g. [year] or your own shortcodes.';
+        return __('page-builder::blocks.shortcode.description');
     }
 
     public static function view(): string
@@ -63,10 +63,10 @@ class ShortcodeBlock implements PageBlock
     {
         return [
             Textarea::make('code')
-                ->label('Shortcode')
+                ->label(__('page-builder::blocks.shortcode.code'))
                 ->rows(3)
                 ->placeholder('[year]')
-                ->helperText('Text around the shortcode is shown as written.'),
+                ->helperText(__('page-builder::blocks.shortcode.code_hint')),
             Placeholder::make('shortcodes')->hiddenLabel()->content(fn (): HtmlString => self::reference()),
         ];
     }
@@ -79,12 +79,15 @@ class ShortcodeBlock implements PageBlock
         $codes = PageBuilder::shortcodes()->all();
 
         if ($codes === []) {
-            return new HtmlString('<span class="fpb-shortcode-ref">This site has no shortcodes yet. A developer can add them with <code>FilamentPageBuilderPlugin::shortcode()</code>.</span>');
+            return new HtmlString('<span class="fpb-shortcode-ref">'.PageBuilder::lineWithMarkup(
+                'page-builder::blocks.shortcode.reference_empty',
+                ['method' => '<code>FilamentPageBuilderPlugin::shortcode()</code>'],
+            ).'</span>');
         }
 
         $items = collect($codes)->map(fn (array $code, string $name): string => '<li><code>'.e($code['example'] ?? "[{$name}]").'</code>'
             .(filled($code['description']) ? ' <span>'.e($code['description']).'</span>' : '').'</li>')->implode('');
 
-        return new HtmlString('<div class="fpb-shortcode-ref"><strong>Available shortcodes</strong><ul>'.$items.'</ul></div>');
+        return new HtmlString('<div class="fpb-shortcode-ref"><strong>'.e(__('page-builder::blocks.shortcode.reference_title')).'</strong><ul>'.$items.'</ul></div>');
     }
 }

@@ -14,4 +14,4 @@
     data-fpb-height="{{ $height }}"
     @if ($custom) style="height: {{ $pixels }}px" @endif
     aria-hidden="true"
->@if (PageBuilder::isEditing())<span class="fpb-spacer-label">Space · {{ $pixels }}px</span>@endif</div>
+>@if (PageBuilder::isEditing())<span class="fpb-spacer-label">{{ __('page-builder::blocks.spacer.canvas_label') }} · {{ $pixels }}px</span>@endif</div>

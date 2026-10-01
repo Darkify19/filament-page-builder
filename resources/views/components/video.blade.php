@@ -33,5 +33,5 @@
         ></video>
     </div>
 @else
-    <div class="fpb-embed-placeholder">Upload a video, or paste a link to a video file, in the sidebar.</div>
+    <div class="fpb-embed-placeholder">{{ __('page-builder::blocks.video.canvas_placeholder') }}</div>
 @endif

@@ -38,8 +38,8 @@
         <button
             type="button"
             class="fpb-block-handle"
-            title="Drag to move"
-            aria-label="Move {{ $label }}"
+            title="{{ __('page-builder::chrome.drag_to_move') }}"
+            aria-label="{{ __('page-builder::chrome.move', ['label' => $label]) }}"
             :draggable="!narrow"
             x-on:dragstart.stop="startMove($event, '{{ $block['id'] }}')"
             x-on:dragend="clearDrag()"
@@ -47,12 +47,24 @@
         >&#8942;&#8942;</button>
         <span class="fpb-block-label">{{ $label }}</span>
         @if ($selected && $block['isKnown'] && ($block['isEditable'] ?? true))
-            <span class="fpb-block-quick" role="group" aria-label="Align text">
-                @foreach (['left' => 'heroicon-m-bars-3-bottom-left', 'center' => 'heroicon-m-bars-3', 'right' => 'heroicon-m-bars-3-bottom-right', 'justify' => 'heroicon-m-bars-4'] as $side => $icon)
+            {{-- The same tooltips as the Style tab's alignment buttons, each a whole phrase.
+                 Gluing "Align :side" to a translated side word read "Выравнивание по По
+                 центру" in Russian and "Aligner à Justifier" in French. The keys stay the
+                 stored `text_align` values, which are CSS and do not move. --}}
+            @php
+                $alignButtons = [
+                    'left' => [__('page-builder::style.alignment.align_left'), 'heroicon-m-bars-3-bottom-left'],
+                    'center' => [__('page-builder::style.common.centre'), 'heroicon-m-bars-3'],
+                    'right' => [__('page-builder::style.alignment.align_right'), 'heroicon-m-bars-3-bottom-right'],
+                    'justify' => [__('page-builder::style.common.justify'), 'heroicon-m-bars-4'],
+                ];
+            @endphp
+            <span class="fpb-block-quick" role="group" aria-label="{{ __('page-builder::chrome.align_text') }}">
+                @foreach ($alignButtons as $side => [$alignLabel, $icon])
                     <button
                         type="button"
-                        title="Align {{ $side }}"
-                        aria-label="Align {{ $side }}"
+                        title="{{ $alignLabel }}"
+                        aria-label="{{ $alignLabel }}"
                         aria-pressed="{{ $align === $side ? 'true' : 'false' }}"
                         @if ($align === $side) data-active="true" @endif
                         wire:click.stop="setBlockStyle('{{ $block['id'] }}', 'text_align', '{{ $align === $side ? '' : $side }}')"
@@ -64,8 +76,8 @@
             <button
                 type="button"
                 class="fpb-block-nudge"
-                title="Move up"
-                aria-label="Move {{ $label }} up"
+                title="{{ __('page-builder::chrome.move_up') }}"
+                aria-label="{{ __('page-builder::chrome.move_named_up', ['label' => $label]) }}"
                 x-show="narrow"
                 x-cloak
                 x-on:click.stop="moveSelected('{{ $block['id'] }}', -1)"
@@ -73,8 +85,8 @@
             <button
                 type="button"
                 class="fpb-block-nudge"
-                title="Move down"
-                aria-label="Move {{ $label }} down"
+                title="{{ __('page-builder::chrome.move_down') }}"
+                aria-label="{{ __('page-builder::chrome.move_named_down', ['label' => $label]) }}"
                 x-show="narrow"
                 x-cloak
                 x-on:click.stop="moveSelected('{{ $block['id'] }}', 1)"
@@ -82,17 +94,17 @@
             <button
                 type="button"
                 class="fpb-block-edit"
-                title="Edit"
-                aria-label="Edit {{ $label }}"
+                title="{{ __('page-builder::chrome.edit') }}"
+                aria-label="{{ __('page-builder::chrome.edit_named', ['label' => $label]) }}"
                 x-show="narrow"
                 x-cloak
                 x-on:click.stop="showWorkspace('settings')"
-            >Edit</button>
-            <button type="button" title="Duplicate" aria-label="Duplicate {{ $label }}"
+            >{{ __('page-builder::chrome.edit') }}</button>
+            <button type="button" title="{{ __('page-builder::chrome.duplicate') }}" aria-label="{{ __('page-builder::chrome.duplicate_named', ['label' => $label]) }}"
                     wire:click.stop="duplicateBlock('{{ $block['id'] }}')">&#10697;</button>
-            <button type="button" class="fpb-block-more" title="More actions (right-click)" aria-label="More actions for {{ $label }}"
+            <button type="button" class="fpb-block-more" title="{{ __('page-builder::chrome.more_actions') }}" aria-label="{{ __('page-builder::chrome.more_actions_named', ['label' => $label]) }}"
                     x-on:click.stop="openMenu($event, '{{ $block['id'] }}')">&#8943;</button>
-            <button type="button" title="Delete" aria-label="Delete {{ $label }}"
+            <button type="button" title="{{ __('page-builder::chrome.delete') }}" aria-label="{{ __('page-builder::chrome.delete_named', ['label' => $label]) }}"
                     x-on:click.stop="remove('{{ $block['id'] }}', {{ $block['hasContent'] ? 'true' : 'false' }})">&#10005;</button>
         </span>
     </div>
@@ -129,9 +141,7 @@
             }) !!}
         @elseif (! $block['isKnown'])
             <p class="fpb-block-retired">
-                This page holds a <code>{{ $block['type'] }}</code> block, which this
-                site no longer offers. Its content is kept and saved untouched; it
-                cannot be shown or edited here.
+                {{ PageBuilder::lineWithMarkup('page-builder::chrome.retired', ['type' => '<code>'.e($block['type']).'</code>']) }}
             </p>
         @endif
     </div>
@@ -139,7 +149,7 @@
     @if ($selected && $block['isKnown'])
         <span
             class="fpb-resize fpb-resize-x"
-            title="Drag to change the width. Double-click to reset."
+            title="{{ __('page-builder::chrome.resize_width') }}"
             aria-hidden="true"
             x-on:pointerdown.stop.prevent="startResize($event, '{{ $block['id'] }}', 'width')"
             x-on:dblclick.stop="resetSize('{{ $block['id'] }}', 'width')"
@@ -147,7 +157,7 @@
         ></span>
         <span
             class="fpb-resize fpb-resize-y"
-            title="Drag to change the height. Double-click to reset."
+            title="{{ __('page-builder::chrome.resize_height') }}"
             aria-hidden="true"
             x-on:pointerdown.stop.prevent="startResize($event, '{{ $block['id'] }}', 'height')"
             x-on:dblclick.stop="resetSize('{{ $block['id'] }}', 'height')"

@@ -3,6 +3,7 @@
 namespace CarlJanzell\FilamentPageBuilder;
 
 use CarlJanzell\FilamentPageBuilder\Contracts\InlineEditable;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Js;
 
 /**
@@ -310,5 +311,30 @@ class PageBuilder
     public static function markup(mixed $html): string
     {
         return static::shortcodes()->expand(is_string($html) ? $html : '', escape: false);
+    }
+
+    /**
+     * A translated line with markup dropped into its placeholders.
+     *
+     * `lineWithMarkup('page-builder::chrome.anchor_hint', ['anchor' => '<code>#intro</code>'])`
+     * gives "Link to this block with <code>#intro</code>." The line itself is escaped and
+     * only the replacements are not, so a translation stays plain text and the only HTML
+     * on the page is what the caller wrote. Passing the `<code>` through `__()` inside
+     * `{{ }}` printed the tags as text; printing the whole line raw would have trusted
+     * every published translation file with markup.
+     *
+     * @param  array<string, string>  $markup  placeholder name → trusted HTML. Escape anything user-supplied.
+     */
+    public static function lineWithMarkup(string $key, array $markup): HtmlString
+    {
+        $line = __($key);
+
+        $replacements = [];
+
+        foreach ($markup as $name => $html) {
+            $replacements[':'.$name] = $html;
+        }
+
+        return new HtmlString(strtr(e(is_string($line) ? $line : $key), $replacements));
     }
 }

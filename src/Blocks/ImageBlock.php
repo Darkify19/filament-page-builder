@@ -23,7 +23,7 @@ class ImageBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'alt' => Editable::text()->placeholder('Describe the image'),
+            'alt' => Editable::text()->placeholder(__('page-builder::blocks.image.alt_placeholder')),
         ];
     }
 
@@ -34,7 +34,7 @@ class ImageBlock implements InlineEditable, PageBlock
 
     public static function label(): string
     {
-        return 'Image';
+        return __('page-builder::blocks.image.label');
     }
 
     public static function icon(): ?string
@@ -49,7 +49,7 @@ class ImageBlock implements InlineEditable, PageBlock
 
     public static function description(): string
     {
-        return 'A photograph, optionally with a gradient laid over it.';
+        return __('page-builder::blocks.image.description');
     }
 
     public static function view(): string
@@ -104,31 +104,31 @@ class ImageBlock implements InlineEditable, PageBlock
     {
         return [
             FileUpload::make('src')
-                ->label('Image')
+                ->label(__('page-builder::blocks.image.src'))
                 ->image()
                 ->disk('public')
                 ->directory('pages'),
-            TextInput::make('alt')->label('Alt text')->maxLength(255),
-            Section::make('Gradient overlay')
+            TextInput::make('alt')->label(__('page-builder::blocks.image.alt'))->maxLength(255),
+            Section::make(__('page-builder::blocks.image.overlay'))
                 ->compact()
                 ->collapsible()
                 ->schema([
                     Toggle::make('overlay')
-                        ->label('Lay a gradient over the image')
+                        ->label(__('page-builder::blocks.image.overlay_toggle'))
                         ->live(),
                     Grid::make(2)
                         ->visible(fn (Get $get): bool => (bool) $get('overlay'))
                         ->schema([
-                            ColorPicker::make('gradient_from')->label('From')->rgba()->default('rgba(0, 0, 0, 0)')->live(debounce: 400),
-                            ColorPicker::make('gradient_to')->label('To')->rgba()->default('rgba(0, 0, 0, 0.7)')->live(debounce: 400),
+                            ColorPicker::make('gradient_from')->label(__('page-builder::blocks.common.from'))->rgba()->default('rgba(0, 0, 0, 0)')->live(debounce: 400),
+                            ColorPicker::make('gradient_to')->label(__('page-builder::blocks.common.to'))->rgba()->default('rgba(0, 0, 0, 0.7)')->live(debounce: 400),
                             Select::make('gradient_type')
-                                ->label('Type')
-                                ->options(['linear' => 'Linear', 'radial' => 'Radial'])
+                                ->label(__('page-builder::blocks.common.type'))
+                                ->options(['linear' => __('page-builder::blocks.common.linear'), 'radial' => __('page-builder::blocks.common.radial')])
                                 ->default('linear')
                                 ->selectablePlaceholder(false)
                                 ->live(),
                             TextInput::make('gradient_angle')
-                                ->label('Direction')
+                                ->label(__('page-builder::blocks.common.direction'))
                                 ->numeric()
                                 ->minValue(0)
                                 ->maxValue(360)
@@ -136,7 +136,7 @@ class ImageBlock implements InlineEditable, PageBlock
                                 ->default(180)
                                 ->live(onBlur: true),
                             TextInput::make('overlay_opacity')
-                                ->label('Strength')
+                                ->label(__('page-builder::blocks.common.strength'))
                                 ->numeric()
                                 ->minValue(0)
                                 ->maxValue(100)

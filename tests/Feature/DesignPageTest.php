@@ -1,5 +1,6 @@
 <?php
 
+use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Filament\PageResource;
 use Filament\Support\Enums\MaxWidth;
@@ -296,4 +297,91 @@ it('drops an entry with no type at all', function (): void {
     $canvas = canvas(page([block('a'), ['id' => 'b'], 'nonsense']));
 
     expect(ids($canvas))->toBe(['a']);
+});
+
+/* ── Translation ───────────────────────────────────────── */
+
+it('renders the editor chrome in the application locale', function (): void {
+    app()->setLocale('de');
+
+    canvas(page())
+        ->assertSee('Layout speichern')
+        ->assertDontSee('Save layout');
+});
+
+it('hands the canvas a JSON payload of translated strings for the script', function (): void {
+    app()->setLocale('tr');
+
+    $html = canvas(page())->html();
+
+    preg_match('/data-fpb-i18n="([^"]*)"/', $html, $matches);
+
+    expect($matches)->not->toBeEmpty('the canvas root must carry data-fpb-i18n for page-builder.js');
+
+    $strings = json_decode(html_entity_decode($matches[1], ENT_QUOTES, 'UTF-8'), true);
+
+    expect($strings)->toBeArray()
+        ->and($strings['confirm_delete'])->toBe('Bu blok silinsin mi? İçeriği de silinir.');
+
+    // The script shows the key for a string it is not handed, so every English key has to
+    // arrive, translated or not.
+    expect(array_keys($strings))->toEqualCanonicalizing(array_keys(require __DIR__.'/../../resources/lang/en/js.php'));
+});
+
+it('names blocks in the editor language on the canvas bar', function (): void {
+    app()->setLocale('de');
+
+    canvas(page([block('a')]))
+        ->assertSeeHtml('aria-label="Überschrift bearbeiten"')
+        ->assertSeeHtml('aria-label="Überschrift nach oben"');
+});
+
+it('words the quick align buttons as whole phrases in every language', function (): void {
+    app()->setLocale('ru');
+
+    canvas(page([block('a')]))
+        ->call('selectBlock', 'a')
+        ->assertSeeHtml('title="По левому краю"')
+        ->assertSeeHtml('title="По центру"')
+        ->assertDontSee('По По');
+});
+
+it('shows the anchor hint as code, with a placeholder the field accepts', function (): void {
+    canvas(page([block('a')]))
+        ->call('selectBlock', 'a')
+        ->assertSeeHtml('Link to this block with <code>#intro</code>.')
+        ->assertSeeHtml('placeholder="intro"')
+        ->assertDontSeeHtml('&lt;code&gt;');
+
+    // Typing the placeholder has to work. A leading # is refused.
+    expect(BlockTree::isValidAnchor('intro'))->toBeTrue()
+        ->and(BlockTree::isValidAnchor('#intro'))->toBeFalse();
+});
+
+it('names a retired type as code in the placeholder that replaces it', function (): void {
+    canvas(page([block('gone', 'retired')]))
+        ->assertSeeHtml('This page holds a <code>retired</code> block');
+});
+
+it('turns a paste down in the editor language', function (): void {
+    app()->setLocale('de');
+
+    canvas(page([block('a')]))
+        ->call('pasteBlocks', json_encode(['fpb' => 1, 'blocks' => []]))
+        ->assertNotified('In der Zwischenablage ist nichts, was diese Seite verwenden kann.');
+});
+
+it('warns before the form editor in a handler the browser can run', function (): void {
+    app()->setLocale('fr');
+
+    $html = canvas(page([block('a'), [...block('b'), 'parent' => 'a', 'slot' => 'col-0', 'position' => 0]]))->html();
+
+    // Blade leaves directives inside a component's attributes alone, so an @js() there
+    // reached the browser as text, the handler did not compile, and the link opened with no
+    // warning at all.
+    preg_match('/x-on:click="if \(! confirm\((\'.*?\')\)\) \{/', $html, $matches);
+
+    expect($html)->not->toContain('@js(')
+        ->and($matches)->not->toBeEmpty('the form editor link must confirm before it opens')
+        ->and(json_decode('"'.substr($matches[1], 1, -1).'"'))->toBe(__('page-builder::chrome.form_editor_columns_warning'));
 });

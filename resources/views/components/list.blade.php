@@ -16,5 +16,5 @@
         @endforeach
     </{{ $tag }}>
 @elseif (PageBuilder::isEditing())
-    <p class="fpb-placeholder">Add the list's items in the sidebar, one per line.</p>
+    <p class="fpb-placeholder">{{ __('page-builder::blocks.list.canvas_placeholder') }}</p>
 @endif

@@ -50,7 +50,7 @@ class FilamentPageBuilderPlugin implements Plugin
     protected bool $customStyles = true;
 
     /**
-     * @var array<string, array{callback: callable, description: ?string, example: ?string}>
+     * @var array<string, array{callback: callable, description: string|Closure|null, example: ?string}>
      */
     protected array $shortcodes = [];
 
@@ -191,9 +191,14 @@ class FilamentPageBuilderPlugin implements Plugin
      * markup: a string, an Htmlable or a View. Its output is trusted, so escape anything
      * it echoes back from `$attributes`.
      *
+     * Pass the description as a closure, `fn () => __('…')`, to have it translated into
+     * the editor's language: this runs while the panel is built, before the request's
+     * locale is known.
+     *
      * @param  callable(array<int|string, string>, ?string): mixed  $callback
+     * @param  string|(Closure(): ?string)|null  $description
      */
-    public function shortcode(string $name, callable $callback, ?string $description = null, ?string $example = null): static
+    public function shortcode(string $name, callable $callback, string|Closure|null $description = null, ?string $example = null): static
     {
         $this->shortcodes[$name] = [
             'callback' => $callback,
@@ -245,34 +250,41 @@ class FilamentPageBuilderPlugin implements Plugin
     }
 
     /**
-     * @return array<string, array<string, string>>
+     * The labels of the preset buttons when the application configures no tokens of its own.
+     *
+     * Translated here rather than left as English: an application that sets nothing still
+     * gets a Brand presets panel, and an editor looking at it should not be told "None,
+     * Small, Medium" in a language they did not choose. The padding scale is shared with
+     * the section gap and spacer options, so it is referenced rather than repeated.
+     *
+     * @return array<string, array<int|string, string>>
      */
     public static function defaultStyleTokens(): array
     {
         return [
             'padding' => [
-                'none' => 'None',
-                'sm' => 'Small',
-                'md' => 'Medium',
-                'lg' => 'Large',
-                'xl' => 'Extra large',
+                'none' => __('page-builder::blocks.common.none'),
+                'sm' => __('page-builder::blocks.common.small'),
+                'md' => __('page-builder::blocks.common.medium'),
+                'lg' => __('page-builder::blocks.common.large'),
+                'xl' => __('page-builder::blocks.common.extra_large'),
             ],
             'background' => [
-                'none' => 'None',
-                'surface' => 'Surface',
-                'muted' => 'Muted',
-                'contrast' => 'Contrast',
+                'none' => __('page-builder::blocks.common.none'),
+                'surface' => __('page-builder::chrome.tokens.surface'),
+                'muted' => __('page-builder::chrome.tokens.muted'),
+                'contrast' => __('page-builder::chrome.tokens.contrast'),
             ],
             'width' => [
-                'narrow' => 'Narrow',
-                'default' => 'Default',
-                'wide' => 'Wide',
-                'full' => 'Full',
+                'narrow' => __('page-builder::chrome.tokens.narrow'),
+                'default' => __('page-builder::chrome.default'),
+                'wide' => __('page-builder::chrome.tokens.wide'),
+                'full' => __('page-builder::chrome.tokens.full'),
             ],
             'align' => [
-                'start' => 'Start',
-                'center' => 'Center',
-                'end' => 'End',
+                'start' => __('page-builder::chrome.tokens.start'),
+                'center' => __('page-builder::chrome.tokens.centre'),
+                'end' => __('page-builder::chrome.tokens.end'),
             ],
         ];
     }
@@ -358,11 +370,11 @@ class FilamentPageBuilderPlugin implements Plugin
 
         if ($this->includeLayoutBlocks) {
             $shortcodes
-                ->register('year', fn (): string => date('Y'), 'The current year.', '[year]')
+                ->register('year', fn (): string => date('Y'), fn (): string => __('page-builder::blocks.shortcode.builtin_year'), '[year]')
                 ->register(
                     'date',
                     fn (array $attributes): string => e(now()->format(is_string($attributes['format'] ?? null) ? $attributes['format'] : 'F j, Y')),
-                    "Today's date. Optional format, as PHP writes dates.",
+                    fn (): string => __('page-builder::blocks.shortcode.builtin_date'),
                     '[date format="F j, Y"]',
                 );
         }

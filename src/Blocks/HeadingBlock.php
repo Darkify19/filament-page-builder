@@ -24,7 +24,7 @@ class HeadingBlock implements InlineEditable, PageBlock
     public static function editables(): array
     {
         return [
-            'text' => Editable::text()->placeholder('Write a heading'),
+            'text' => Editable::text()->placeholder(__('page-builder::blocks.heading.placeholder')),
         ];
     }
 
@@ -35,7 +35,7 @@ class HeadingBlock implements InlineEditable, PageBlock
 
     public static function label(): string
     {
-        return 'Heading';
+        return __('page-builder::blocks.heading.label');
     }
 
     public static function icon(): ?string
@@ -50,7 +50,7 @@ class HeadingBlock implements InlineEditable, PageBlock
 
     public static function description(): string
     {
-        return 'A title for the page or a section, H1 to H6.';
+        return __('page-builder::blocks.heading.description');
     }
 
     public static function view(): string
@@ -91,10 +91,10 @@ class HeadingBlock implements InlineEditable, PageBlock
     {
         return [
             TextInput::make('text')
-                ->label('Heading')
+                ->label(__('page-builder::blocks.heading.text'))
                 ->maxLength(255),
             ToggleButtons::make('level')
-                ->label('Level')
+                ->label(__('page-builder::blocks.heading.level'))
                 ->options(array_combine(self::LEVELS, array_map('strtoupper', self::LEVELS)))
                 ->default('h2')
                 ->inline()
