@@ -77,9 +77,14 @@
                     @endphp
                     <span class="fpb-desktop-only">
                         @if ($this->hasNestedBlocks())
+                            {{-- Not an SPA link. On an SPA panel Filament gives the link
+                                 wire:navigate, and Livewire navigates on mousedown and
+                                 mouseup, before this click handler runs, so Cancel came too
+                                 late and the form editor opened anyway. --}}
                             <x-filament::button
                                 tag="a"
                                 href="{{ $formEditorUrl }}"
+                                :spa-mode="false"
                                 color="gray"
                                 size="sm"
                                 x-on:click="if (! confirm({{ $formEditorColumnsWarning }})) { $event.preventDefault() }"
