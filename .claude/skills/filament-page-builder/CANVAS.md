@@ -94,7 +94,7 @@ It commits the inspector (data, settings, then anchor), refreshes the record, an
 | `getExtraBodyAttributes()` adds `fpb-edit-mode` | The CSS hook that hides Filament's sidebar, topbar and header. See [FRONTEND.md](FRONTEND.md). |
 | `getPageClasses()` → `['fpb-editor-page']`, **never `fpb-page`** | `fpb-page` marks the *public* wrapper, and rules hung off it strip a slot back to a bare grid cell. Putting it on the editor erased the drop wells (incident `dc08dbc`). |
 | `exitUrl()` | The resource's `index` page if it has one, otherwise the edit page. |
-| `formEditorUrl()` | `null` when the resource has no `edit` page, because the canvas may be the only editing surface (fixture `LayoutPageResource`). Never link to the edit page unconditionally. |
+| `formEditorUrl()` | `null` when the resource has no `edit` page, because the canvas may be the only editing surface (fixture `LayoutPageResource`). Never link to the edit page unconditionally. On a nested page the link asks for confirmation first, so it carries `:spa-mode="false"`. Livewire's `wire:navigate` fires on mousedown and mouseup, before the click handler, so on an SPA panel Cancel came too late. |
 
 `styleTokens()`, `canvasStylesView()` and the `blocksAttribute()` fallback all call `FilamentPageBuilderPlugin::get()` → `filament('page-builder')`. **The design page must live on a panel that registered the plugin**, or those calls throw.
 
