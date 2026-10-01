@@ -3,7 +3,9 @@
 use CarlJanzell\FilamentPageBuilder\Support\BlockTree;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Blocks\RestrictedBlock;
 use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Filament\PageResource;
+use CarlJanzell\FilamentPageBuilder\Tests\Fixtures\Page;
 use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Facades\FilamentView;
 
 beforeEach(function (): void {
     PageResource::$canEdit = true;
@@ -384,4 +386,26 @@ it('warns before the form editor in a handler the browser can run', function ():
     expect($html)->not->toContain('@js(')
         ->and($matches)->not->toBeEmpty('the form editor link must confirm before it opens')
         ->and(json_decode('"'.substr($matches[1], 1, -1).'"'))->toBe(__('page-builder::chrome.form_editor_columns_warning'));
+});
+
+it('opens the form editor of a nested page without SPA navigation, so Cancel can stop it', function (): void {
+    // What an SPA panel turns on. Livewire navigates a wire:navigate link on mousedown and
+    // mouseup, before the click handler that asks for confirmation runs, so the link
+    // opened even after Cancel.
+    FilamentView::spa();
+
+    $link = function (Page $page): string {
+        preg_match('/<a\b[^>]*href="[^"]*\/edit"[^>]*>/', canvas($page)->html(), $matches);
+
+        expect($matches)->not->toBeEmpty('the canvas must link to the form editor');
+
+        return $matches[0];
+    };
+
+    expect($link(page([block('a'), [...block('b'), 'parent' => 'a', 'slot' => 'col-0', 'position' => 0]])))
+        ->toContain('confirm(')
+        ->not->toContain('wire:navigate')
+        ->and($link(page([block('a')])))
+        ->toContain('wire:navigate')
+        ->not->toContain('confirm(');
 });
