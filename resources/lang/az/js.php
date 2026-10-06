@@ -16,7 +16,7 @@ return [
     'place_page' => 'səhifə',
     'place_column' => 'sütun',
     'place_column_n' => 'sütun :number',
-    'drag_resize_columns' => 'Sütunların ölçüsünü dəyişmək üçün sürüşdürün',
+    'drag_resize_columns' => 'Sütunların ölçüsünü dəyişmək üçün sürükləyin',
     'full_width' => 'Tam en',
     'percent_wide' => ':percent% enində',
     'pixels_tall' => ':height piksel hündürlüyündə',
