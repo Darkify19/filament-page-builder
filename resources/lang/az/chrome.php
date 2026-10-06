@@ -15,7 +15,7 @@ return [
     'undo' => 'Geri qaytar',
     'redo' => 'Təkrar et',
     'form_editor' => 'Forma redaktoru',
-    'form_editor_columns_warning' => 'Bu səhifə sütunlardan istifadə edir. Forma görünüşü həmin düzəni düzgün göstərə bilməz və məzmunu silə və ya dublikat edə bilər. Yenə də açlsın?',
+    'form_editor_columns_warning' => 'Bu səhifə sütunlardan istifadə edir. Forma görünüşü həmin düzəni düzgün göstərə bilməz və məzmunu silə və ya dublikat edə bilər. Yenə də açılsın?',
     'preview' => 'Ön baxış',
     'preview_hint' => 'Səhifəni ziyarətçilərin gördüyü kimi görün (saxlanılmamış dəyişikliklər daxil olmaqla)',
     'preview_note' => 'Saxlanılmamış dəyişikliklər daxildir. Keçidlər, video və xüsusi kod canlıdır.',
