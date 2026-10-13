@@ -62,7 +62,7 @@ It is purely presentational and runs *after* state has already changed. When Ani
 
 - **`motion.play()` calls `complete` immediately when disabled.** Callers put real work there: `remove()` calls `$wire.removeBlock()` *inside* `complete`. Route every animation through `motion.play`, never call `window.anime` directly, and never put required work in any other callback.
 - **FLIP:** `captureRects()` runs on every `pointerdown` (capture phase) and is trusted for 1500 ms. A `MutationObserver` on the canvas calls `settle()` once per frame: an id that wasn't in `seen` gets `enter()` (fade, ring, scroll into view), and an id whose box moved gets `slide()`.
-- **`isOwnChrome()`** filters mutations that only add or remove `.fpb-drop-marker` / `.fpb-flash`. **Any new decoration element inserted into the canvas must be added there.** The 3 px drop marker moving on every `dragover` used to make every block twitch.
+- **`isOwnChrome()`** filters mutations that only add or remove `.fpb-flash`. **Any new decoration element inserted into the canvas must be added there.** The drop indicator (`.fpb-drop-indicator`) and the column handles avoid the problem by living on an overlay outside the canvas: the old in-canvas drop marker, moving on every `dragover`, made every block twitch.
 
 ---
 
