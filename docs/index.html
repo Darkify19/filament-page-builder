@@ -786,8 +786,39 @@ it is included inside the canvas so blocks render exactly as they do publicly:</
 <h4>Chrome classes you can override</h4>
 <p>All prefixed <code>fpb-</code>: <code>.fpb</code>, <code>.fpb-palette</code>, <code>.fpb-palette-item</code>,
 <code>.fpb-canvas</code>, <code>.fpb-block</code>, <code>.fpb-block-bar</code>, <code>.fpb-block-body</code>,
-<code>.fpb-drop-marker</code>, <code>.fpb-chrome</code>, <code>.fpb-toolbar-actions</code>, <code>.fpb-inspector</code>, <code>.fpb-empty</code>.
+<code>.fpb-drop-indicator</code>, <code>.fpb-chrome</code>, <code>.fpb-toolbar-actions</code>, <code>.fpb-inspector</code>, <code>.fpb-empty</code>.
 The selected block carries <code>data-selected="true"</code>.</p>
+
+<h4>Chrome colours</h4>
+<p>The editor follows the panel&rsquo;s light and dark mode on its own, and takes its accent from the panel&rsquo;s
+primary colour. These variables override what it picks, set on <code>:root</code> for light and on
+<code>html.dark .fpb</code> for dark:</p>
+
+<div class="tw">
+<table>
+<thead><tr><th>Variable</th><th>Default</th><th>What it paints</th></tr></thead>
+<tbody>
+<tr><td><code>--fpb-editor-bg</code></td><td><code>#f4f4f5</code></td><td>Behind the whole editor</td></tr>
+<tr><td><code>--fpb-panel-bg</code></td><td><code>#fff</code></td><td>The toolbar, palette and inspector</td></tr>
+<tr><td><code>--fpb-raised-bg</code></td><td><code>#fff</code></td><td>The selected tab and preview-width pill</td></tr>
+<tr><td><code>--fpb-editor-accent</code></td><td>the panel&rsquo;s <code>primary-600</code></td><td>The selection, drop markers and active states</td></tr>
+<tr><td><code>--fpb-editor-accent-strong</code></td><td>the panel&rsquo;s <code>primary-700</code></td><td>Accent fills behind white text</td></tr>
+<tr><td><code>--fpb-canvas-bg</code> / <code>--fpb-canvas-fg</code></td><td><code>#fff</code> / <code>#111827</code></td><td>The page preview itself</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The canvas keeps its light default in dark mode, because it is a preview of a public page rather than part of
+the admin chrome. Change the last pair if your site is dark. The shipped Button block and the check-list marker
+read <code>--fpb-accent</code> instead: that is your site&rsquo;s accent rather than the editor&rsquo;s, so set it
+alongside your block styles.</p>
+
+<h4>Theming with an AI agent</h4>
+<p>The package ships a <a href="https://laravel.com/docs/boost">Laravel Boost</a> skill,
+<code>filament-page-builder-theming</code>, that walks a coding agent through matching the canvas, the style
+tokens and the chrome to your own theme. <code>php artisan boost:install</code> (or <code>boost:update</code>)
+installs it. Without Boost, point your agent at
+<code>vendor/carljanzell/filament-page-builder/resources/boost/skills/filament-page-builder-theming/SKILL.md</code>.</p>
 
 <h2 id="translations">Translations <a class="anchor" href="#translations">#</a></h2>
 
