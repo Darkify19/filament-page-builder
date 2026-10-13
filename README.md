@@ -139,18 +139,32 @@ canvas and restyles the builder around it.
 
 ### Theming the chrome
 
-The builder follows the panel's light and dark mode on its own. Four variables override
-what it picks, set on `:root` for light and on `html.dark .fpb` for dark:
+The builder follows the panel's light and dark mode on its own, and takes its accent from
+the panel's primary colour. These variables override what it picks, set on `:root` for
+light and on `html.dark .fpb` for dark:
 
 | Variable | Default | What it paints |
 | --- | --- | --- |
 | `--fpb-editor-bg` | `#f4f4f5` | Behind the whole editor |
 | `--fpb-panel-bg` | `#fff` | The toolbar, palette and inspector |
 | `--fpb-raised-bg` | `#fff` | The selected tab and preview-width pill |
+| `--fpb-editor-accent` | the panel's `primary-600` | The selection, drop markers and active states |
+| `--fpb-editor-accent-strong` | the panel's `primary-700` | Accent fills behind white text |
 | `--fpb-canvas-bg` / `--fpb-canvas-fg` | `#fff` / `#111827` | The page preview itself |
 
 The canvas keeps its light default in dark mode, because it is a preview of a public
 page rather than part of the admin chrome. Change the last pair if your site is dark.
+
+The shipped Button block and the check-list marker read `--fpb-accent` instead. That is
+your site's accent rather than the editor's, so set it alongside your block styles.
+
+### Theming with an AI agent
+
+The package ships a [Laravel Boost](https://laravel.com/docs/boost) skill,
+`filament-page-builder-theming`, that walks a coding agent through matching the canvas,
+the style tokens and the chrome to your own theme. `php artisan boost:install` (or
+`boost:update`) installs it. Without Boost, point your agent at
+`vendor/carljanzell/filament-page-builder/resources/boost/skills/filament-page-builder-theming/SKILL.md`.
 
 ## Editing on the page
 
