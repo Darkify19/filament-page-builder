@@ -13,7 +13,7 @@ content as an ordered array of typed blocks in a single JSON column.
 
 </div>
 
-**Which version?** Filament 4.12.6+ and 5.x use **v0.4.x**, from `main`; this README covers
+**Which version?** Filament 4.13.2+ and 5.8.2+ use **v0.4.x**, from `main`; this README covers
 them. Filament 3.3.53+ uses **v0.3.x**, from the `filament-3` branch, whose docs are in the
 [Filament 3 README](https://github.com/Darkify19/filament-page-builder/blob/filament-3/README.md).
 `composer require carljanzell/filament-page-builder` picks the right one for your panel.
@@ -48,7 +48,7 @@ surfaces read and write the same JSON, so neither owns the content.
 
 ## Installation
 
-Requires **PHP 8.3+** and **Filament 4.12.6+ or 5.x**. On **Filament 3.3.53+**, the same
+Requires **PHP 8.3+** and **Filament 4.13.2+ or 5.8.2+**. On **Filament 3.3.53+**, the same
 command installs the 0.3.x line, built from the
 [`filament-3`](https://github.com/Darkify19/filament-page-builder/tree/filament-3) branch.
 
