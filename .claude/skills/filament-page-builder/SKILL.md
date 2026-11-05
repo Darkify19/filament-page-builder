@@ -43,6 +43,7 @@ It adds a full-screen visual canvas beside Filament's `Builder` form field. Both
 | Writing or changing a block: the `PageBlock` / `Container` / `InlineEditable` contracts, optional `defaults()`/`category()`/`description()`, the per-panel registry, shipped primitives, `Editable` kinds, `BlockStateNormaliser` | [BLOCKS.md](BLOCKS.md) |
 | Canvas vs public rendering, `view()` resolution (`::` include vs component), the `PageBuilder` context stack, writing a container view with `slot()`, token emission rules, **public-site CSS**, the responsive preview | [RENDERING.md](RENDERING.md) |
 | The Testbench harness, fixtures, shared helpers, what's untested (all JS), CI, the dev→main auto-merge, consumers on `dev-main` | [TESTING.md](TESTING.md) |
+| **Making a change that spans this package and DAME** (triage, branch/PR flow, `composer update` + `filament:assets` bump, which repo may be pushed) | `../DAME_UPLB/.claude/skills/page-builder/SKILL.md` |
 | **How DAME (the first consumer) integrates**: its block library, `PageBlocks` Builder bridge, canvas styles | `../DAME_UPLB/.claude/skills/dame-uplb/CMS.md`. This skill is authoritative for package behaviour, so don't duplicate DAME specifics here. |
 
 ---
@@ -132,18 +133,18 @@ ROADMAP.md                        # staged plan (Stage 0/B-text/C done; rich tex
 7. **The JS has zero tests.** Renaming a `DesignPage` method, a `data-*` attribute or `$root` lookups breaks drag and inline editing *silently*. Run `scripts/check-drift.sh`, then click through the canvas in a real panel.
 8. **No build step.** Never add `package.json`, a bundler or a CDN. Vendor a prebuilt UMD file under `resources/js/vendor/` if you must, register it in `registerAssets()`, and add it to `AssetRegistrationTest`.
 9. **Consumers must render through `<x-page-builder::blocks>`.** A hand-rolled `@foreach` + `<x-dynamic-component :component="$registry->view(...)">` prints section children at the top level and *throws* on every shipped primitive, whose views are namespaced paths (verified, RENDERING.md).
-10. **The docs have drifted. Trust the code, and fix the doc in the same commit** (ROADMAP §8):
+10. **Docs and code were reconciled; keep them that way.** The README, `docs/index.html` and `ROADMAP.md` now state what is *not* shipped, so trust the code and fix any doc in the same commit (ROADMAP §8). The claims that drifted before, and will again if a doc is edited from memory:
 
-| Claim | Where | Reality |
-|---|---|---|
-| `filament:optimize` publishes the assets | docs "Assets" | Only `filament:assets` / `filament:upgrade` do |
-| `.fpb-toolbar` is an overridable class | docs "Styling the canvas" | It doesn't exist. Use `.fpb-chrome` / `.fpb-toolbar-actions` |
-| `recordModel()` is honoured | ROADMAP 0.3 | Stored and read by nothing (documented) |
-| Storage v2 `{"version":2,"blocks":[…]}` + `pages:upgrade-blocks` | ROADMAP §4.1 | Never shipped. The upgrade happens implicitly in `hydrate()` |
-| Per-breakpoint visibility | ROADMAP §4.3 | Not shipped. Embed and anchor **are** |
-| SortableJS vendored for nesting | ROADMAP §6 | Native DnD. Anime.js is the only vendored library |
-| Pest browser tests for drag/drop/typing | ROADMAP 0.1 | None exist. `check-drift.sh` is the JS contract |
-| Shortcuts are ignored while typing | — | ⌘S flushes then saves. ⌘Z / ⇧⌘Z return while `isTyping()` |
+| Easy to assume | Reality |
+|---|---|
+| `filament:optimize` publishes the assets | Only `filament:assets` / `filament:upgrade` do |
+| `.fpb-toolbar` is an overridable class | It doesn't exist. Use `.fpb-chrome` / `.fpb-toolbar-actions` |
+| `recordModel()` is honoured | Stored and read by nothing |
+| Storage v2 `{"version":2,"blocks":[…]}` + `pages:upgrade-blocks` | Never shipped. The upgrade happens implicitly in `hydrate()` |
+| Per-breakpoint visibility | Not shipped. Embed and anchor **are** |
+| SortableJS is vendored for nesting | Native DnD. Anime.js is the only vendored library (ROADMAP §6 is an open decision, not a shipped one) |
+| Pest browser tests cover drag/drop/typing | None exist. `check-drift.sh` is the JS contract |
+| Shortcuts are ignored while typing | ⌘S flushes then saves. ⌘Z / ⇧⌘Z return while `isTyping()` |
 
 ---
 
