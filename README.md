@@ -277,6 +277,17 @@ A new locale is welcome as a pull request: copy `resources/lang/en` to
 `resources/lang/{locale}` and translate it. Keep the `:placeholders`. The suite checks that a
 locale has no key English lacks, and that it keeps every placeholder.
 
+## For AI agents
+
+The package ships an agent guide at
+[`resources/boost/guidelines/core.blade.php`](resources/boost/guidelines/core.blade.php):
+install, registering on a panel, every plugin method, blocks, rendering and common tasks. The
+theming skill is at
+[`resources/boost/skills/filament-page-builder-theming/SKILL.md`](resources/boost/skills/filament-page-builder-theming/SKILL.md).
+Apps using [Laravel Boost](https://laravel.com/docs/boost) pick both up on `php artisan boost:install`
+(or `boost:update`). Without Boost, point your agent at the guide file.
+Working on the package itself: [AGENTS.md](AGENTS.md).
+
 ## Tests
 
 ```bash
