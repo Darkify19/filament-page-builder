@@ -228,6 +228,8 @@ repo. Two things want it:
   package's own `resources/js/` solves nesting, touch, auto-scroll and drop animation.
   Filament bundles SortableJS but does not expose it as a public global, so we cannot
   borrow it.
+  *Status:* not done. Nesting shipped on native DnD, and Anime.js is still the only
+  vendored library.
 - **Rich text.** Already solved without any vendoring — Filament's TipTap bundle is
   reachable through `FilamentAsset::getAlpineComponentSrc('rich-editor', 'filament/forms')`.
 
